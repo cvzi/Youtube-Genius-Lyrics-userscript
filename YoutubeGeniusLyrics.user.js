@@ -1,31 +1,44 @@
 // ==UserScript==
-// @name         Spotify Genius Lyrics
-// @description  Show lyrics from genius.com on the Spotify web player
+// @name         Youtube Genius Lyrics
+// @description  Show lyrics/songtexts from genius.com on Youtube next to music videos
 // @license      GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @copyright    2019, cuzi (https://github.com/cvzi)
-// @supportURL   https://github.com/cvzi/Spotify-Genius-Lyrics-userscript/issues
-// @version      8
-// @include      https://open.spotify.com/*
+// @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
+// @version      1
+// @include      https://www.youtube.com/*
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
 // @grant        GM.getValue
+// @grant        unsafeWindow
 // @connect      genius.com
 // ==/UserScript==
 
 const isFirefox = typeof InstallTrigger !== 'undefined'
-const emptySpotifyURL = 'https://open.spotify.com/robots.txt'
+const emptyYoutubeURL = 'https://www.youtube.com/robots.txt'
 var requestCache = {}
 var selectionCache = {}
 var currentTitle = ''
 var currentArtists = ''
-var resizeLeftContainer
-var resizeContainer
-var optionCurrentSize = 30.0
 var optionAutoShow = true
 var mainIv
 var themeKey
 var theme
 var annotationsEnabled = true
+var resizeOnNextRun = false
+
+const musicKeywords = [
+  'music', 'musik', 'album', 'single',
+  'hiphop', 'hip-hop', 'hip hop', 'rap',
+  'rnb', 'r\'n\'n', 'r&b',
+  'dance',
+  'reggae',
+  'folk',
+  'indie',
+  'metal',
+  'pop',
+  'punk',
+  'rock'
+]
 
 function getHostname (url) {
   const a = document.createElement('a')
@@ -45,20 +58,40 @@ function metricPrefix (n, decimals, k) {
   return parseFloat((n / Math.pow(k, i)).toFixed(dm)) + sizes[i]
 }
 
+function loremIpsum () {
+  const classText = ['<span class="gray">', '</span>']
+  const classWhitespace = ['<span class="white">', '</span>']
+  const random = (x) => 1 + parseInt(Math.random() * x)
+  let text = ''
+  for (let v = 0; v < random(5); v++) {
+    for (let b = 0; b < random(6); b++) {
+      let line = []
+      for (let l = 0; l < random(9); l++) {
+        for (let w = 0; w < 1 + random(10); w++) {
+          for (let i = 0; i < 1 + random(7); i++) {
+            line.push('x')
+          }
+          line.push(classText[1] + classWhitespace[0] + '&#160;' + classWhitespace[1] + classText[0])
+        }
+        line.push(classText[1] + '\n<br>\n' + classText[0])
+      }
+      text += classText[0] + line.join('') + classText[1] + '\n<br>\n'
+    }
+  }
+  return text
+}
+
 function loadCache () {
   Promise.all([
     GM.getValue('selectioncache', '{}'),
     GM.getValue('requestcache', '{}'),
-    GM.getValue('optioncurrentsize', 30.0),
     GM.getValue('optionautoshow', true)
   ]).then(function (values) {
     selectionCache = JSON.parse(values[0])
 
     requestCache = JSON.parse(values[1])
 
-    optionCurrentSize = values[2]
-
-    optionAutoShow = values[3]
+    optionAutoShow = values[2]
     /*
     requestCache = {
        "cachekey0": "121648565.5\njsondata123",
@@ -346,9 +379,9 @@ const themes = {
       return cb(html)
     }
   },
-  'spotify': {
-    'name': 'Spotify',
-    'scripts': function themeSpotifyScripts () {
+  'cleanwhite': {
+    'name': 'Clean white',
+    'scripts': function themeCleanWhiteScripts () {
       const script = []
       const onload = []
 
@@ -469,7 +502,7 @@ const themes = {
 
       return [script, onload]
     },
-    'combine': function themeSpotifyXombineGeniusResources (script, onload, song, html, annotations, cb) {
+    'combine': function themeCleanWhiteXombineGeniusResources (script, onload, song, html, annotations, cb) {
       let headhtml = ''
 
       // Make annotations clickable
@@ -497,30 +530,28 @@ const themes = {
 
       // CSS
       headhtml += '\n<style>'
-      headhtml += '\n  @font-face{font-family:spotify-circular;src:url("https://open.scdn.co/fonts/CircularSpUIv3T-Light.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Light.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Light.ttf) format("truetype");font-weight:200;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular;src:url("https://open.scdn.co/fonts/CircularSpUIv3T-Book.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Book.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Book.ttf) format("truetype");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular;src:url("https://open.scdn.co/fonts/CircularSpUIv3T-Bold.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Bold.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIv3T-Bold.ttf) format("truetype");font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-arabic;src:url("https://open.scdn.co/fonts/CircularSpUIAraOnly-Light.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Light.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Light.otf) format("opentype");font-weight:200;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-arabic;src:url("https://open.scdn.co/fonts/CircularSpUIAraOnly-Book.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Book.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Book.otf) format("opentype");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-arabic;src:url("https://open.scdn.co/fonts/CircularSpUIAraOnly-Bold.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Bold.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIAraOnly-Bold.otf) format("opentype");font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-hebrew;src:url("https://open.scdn.co/fonts/CircularSpUIHbrOnly-Light.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Light.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Light.otf) format("opentype");font-weight:200;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-hebrew;src:url("https://open.scdn.co/fonts/CircularSpUIHbrOnly-Book.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Book.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Book.otf) format("opentype");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-hebrew;src:url("https://open.scdn.co/fonts/CircularSpUIHbrOnly-Bold.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Bold.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUIHbrOnly-Bold.otf) format("opentype");font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-cyrillic;src:url("https://open.scdn.co/fonts/CircularSpUICyrOnly-Light.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Light.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Light.otf) format("opentype");font-weight:200;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-cyrillic;src:url("https://open.scdn.co/fonts/CircularSpUICyrOnly-Book.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Book.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Book.otf) format("opentype");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:spotify-circular-cyrillic;src:url("https://open.scdn.co/fonts/CircularSpUICyrOnly-Bold.woff2") format("woff2"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Bold.woff) format("woff"),url(https://open.scdn.co/fonts/CircularSpUICyrOnly-Bold.otf) format("opentype");font-weight:600;font-style:normal;font-display:swap}'
-      headhtml += '\n  html{ \nscrollbar-color:hsla(0,0%,100%,.3) transparent;\nscrollbar-width:auto; }'
       headhtml += '\n  body {'
-      headhtml += '\n    background-color: rgba(0, 0, 0, 0); color:white;'
-      headhtml += '\n    font-family:spotify-circular,spotify-circular-cyrillic,spotify-circular-arabic,spotify-circular-hebrew,Helvetica Neue,Helvetica,Arial,Hiragino Kaku Gothic Pro,Meiryo,MS Gothic,sans-serif;'
+      headhtml += '\n    background-color: white; color:black;'
+      headhtml += '\n    font-family:Roboto, Arial, sans-serif;'
       headhtml += '\n  }'
-      headhtml += '\n  .mylyrics {color: rgb(255,255,255,0.6); font-size: 1.3em; line-height: 1.1em;font-weight: 300; padding:0.1em;}'
-      headhtml += '\n  .referent {background-color:transparent;box-shadow: none;}'
-      headhtml += '\n  .windows a.referent {padding:0; line-height: 1.1em; background-color:transparent;box-shadow: none;}'
-      headhtml += '\n  .windows a.referent:hover {background-color: hsla(0,0%,0%,.2);border-radius: 2px;}'
-      headhtml += '\n  .referent:hover {background-color: hsla(0,0%,0%,.2);border-radius: 2px;}'
-      headhtml += '\n  .windows a.referent:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { opacity:1.0; background-color: transparent; box-shadow: none; color:white; transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
-      headhtml += '\n  .referent:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { opacity:1.0; background-color: transparent; box-shadow: none; color:white; transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
-      headhtml += '\n  .windows a.referent:hover:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { background-color: hsla(0,0%,0%,.2);border-radius: 2px;}'
-      headhtml += '\n  .referent--yellow.referent--highlighted { opacity:1.0; background-color: transparent; box-shadow: none; color:#1ed760; transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
-      headhtml += '\n  .annotationbox {position:absolute; display:none; max-width:95%; min-width: 160px;padding: 3px 7px;margin: 2px 0 0;background-color: #282828;background-clip: padding-box;border: 1px solid rgba(0,0,0,.15);border-radius: .25rem;}'
-      headhtml += '\n  .annotationbox .annotationlabel {display:inline-block;background-color: hsla(0,0%,100%,.6);color: #000;border-radius: 2px;padding: 0 .3em;}'
-      headhtml += '\n  .annotationbox .annotation_rich_text_formatting {color: rgb(255,255,255,0.6)}'
-      headhtml += '\n  .annotationbox .annotation_rich_text_formatting a {color: rgb(255,255,255,0.9)}'
-      headhtml += '\n  .header_with_cover_art-primary_info h1,.header_with_cover_art-primary_info h2,.header_with_cover_art-primary_info h3 {color: rgb(255,255,255,0.5); font-size: 0.9em; line-height: 1.0em;font-weight: 300; }'
+      headhtml += '\n  .mylyrics {color: black; font-size: 1.3em; line-height: 1.1em;font-weight: 300; padding:0.1em;}'
+      headhtml += '\n  .referent {background-color:white;box-shadow: none;}'
+      headhtml += '\n  .windows a.referent {padding:0; line-height: 1.1em; background-color:white;box-shadow: none;}'
+      headhtml += '\n  .windows a.referent:hover {background-color: rgb(230,230,230);border-radius: 2px;}'
+      headhtml += '\n  .referent:hover {background-color: rgb(230,230,230);border-radius: 2px;}'
+      headhtml += '\n  .windows a.referent:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { opacity:1.0; background-color: white; box-shadow: none; color:rgb(6, 95, 212); transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
+      headhtml += '\n  .referent:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { opacity:1.0; background-color: white; box-shadow: none; color:blue; transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
+      headhtml += '\n  .windows a.referent:hover:not(.referent--green):not(.referent--red):not(.referent--highlighted):not(.referent--image) { background-color: rgb(230,230,230);border-radius: 2px;}'
+      headhtml += '\n  .referent--yellow.referent--highlighted { opacity:1.0; background-color: white; box-shadow: none; color:blue; transition: color .2s linear;transition-property: color;transition-duration: 0.2s;transition-timing-function: linear;transition-delay: 0s;}'
+      headhtml += '\n  .annotationbox {position:absolute; display:none; max-width:95%; min-width: 160px;padding: 3px 7px;margin: 2px 0 0;background-color: rgba(245, 245, 245, 0.98);background-clip: padding-box;border: 1px solid rgba(0,0,0,.15);border-radius: .25rem;}'
+      headhtml += '\n  .annotationbox .annotationlabel {display:block;color:rgb(10, 10, 10);border-bottom:1px solid rgb(200,200,200);padding: 0;font-weight:600}'
+      headhtml += '\n  .annotationbox .annotation_rich_text_formatting {color: black}'
+      headhtml += '\n  .annotationbox .annotation_rich_text_formatting a {color: rgb(6, 95, 212)}'
+      headhtml += '\n  .header_with_cover_art-primary_info h1,.header_with_cover_art-primary_info h2,.header_with_cover_art-primary_info h3 {color: gray; font-size: 0.9em; line-height: 1.0em;font-weight: 300; }'
       headhtml += '\n  h1.header_with_cover_art-primary_info-title {line-height: 1.1em;}'
-      headhtml += '\n  h1.header_with_cover_art-primary_info-title a {color: rgb(255,255,255,0.9); font-size:1.1em}'
-      headhtml += '\n  h2 a,h2 a.header_with_cover_art-primary_info-primary_artist {color: rgb(255,255,255,0.9); font-size:1.0em; font-weight:300}'
-      headhtml += '\n  .header_with_cover_art-primary_info {display:inline-block;background-color: hsla(0,0%,0%,.2);color: #000;border-radius: 2px;padding:7px 10px 0px 5px;}'
+      headhtml += '\n  h1.header_with_cover_art-primary_info-title a {color: gray; font-size:1.1em}'
+      headhtml += '\n  h2 a,h2 a.header_with_cover_art-primary_info-primary_artist {color: gray; font-size:1.0em; font-weight:300}'
+      headhtml += '\n  .header_with_cover_art-primary_info {display:inline-block;color: black;border-radius: 2px;padding:7px 10px 0px 5px;}'
       headhtml += '\n</style>\n'
 
       // Add to <head>
@@ -539,54 +570,61 @@ function combineGeniusResources (song, html, annotations, cb) {
   return theme.combine(script, onload, song, html, annotations, cb)
 }
 
+function calcContainerWidthTop () {
+  const w = window.innerWidth - (document.querySelector('ytd-watch-flexy div#primary video').getClientRects()[0].right + 24)
+  const top = document.getElementById('masthead-container').clientHeight
+  return [w, top]
+}
+
+function setFrameWidthHeight (container, iframe) {
+  const bar = container.querySelector('.lyricsbar')
+  const width = iframe.style.width = container.clientWidth - 1 + 'px'
+  const height = iframe.style.height = window.innerHeight - bar.clientHeight - document.getElementById('masthead-container').clientHeight + 'px'
+  iframe.style.paddingLeft = '24px'
+  return [width, height]
+}
+
 function onResize () {
-  let iframe = document.getElementById('lyricsiframe')
+  const container = document.getElementById('lyricscontainer')
+  const iframe = document.getElementById('lyricsiframe')
+
+  if (!container) {
+    return
+  }
+
+  const [w, top] = calcContainerWidthTop()
+
+  container.style.top = top + 'px'
+  container.style.width = w + 'px'
+
   if (iframe) {
-    iframe.style.width = document.getElementById('lyricscontainer').clientWidth - 1 + 'px'
-    iframe.style.height = document.querySelector('.Root__nav-bar .navBar').clientHeight + 'px'
+    setFrameWidthHeight(container, iframe)
   }
 }
-function initResize () {
-  window.addEventListener('mousemove', onMouseMoveResize)
-  window.addEventListener('mouseup', stopResize)
-  window.removeEventListener('resize', onResize)
-}
-function onMouseMoveResize (e) {
-  optionCurrentSize = 100 - (e.clientX / document.body.clientWidth * 100)
-  resizeLeftContainer.style.width = (100 - optionCurrentSize) + '%'
-  resizeContainer.style.width = optionCurrentSize + '%'
-}
-function stopResize () {
-  window.removeEventListener('mousemove', onMouseMoveResize)
-  window.removeEventListener('mouseup', stopResize)
-  window.addEventListener('resize', onResize)
-  onResize()
-  GM.setValue('optioncurrentsize', optionCurrentSize)
-}
+
 function getCleanLyricsContainer () {
-  const topContainer = document.querySelector('.Root__top-container')
+  let container
+
+  const [w, top] = calcContainerWidthTop()
+
   if (!document.getElementById('lyricscontainer')) {
-    topContainer.style.width = (100 - optionCurrentSize) + '%'
-    topContainer.style.float = 'left'
-    resizeContainer = document.createElement('div')
-    resizeContainer.id = 'lyricscontainer'
-    resizeContainer.style = 'min-height: 100%; width: ' + optionCurrentSize + '%; position: relative; z-index: 1; float:left'
-    topContainer.parentNode.insertBefore(resizeContainer, topContainer.nextSibling)
+    container = document.createElement('div')
+    container.id = 'lyricscontainer'
+    document.body.appendChild(container)
   } else {
-    resizeContainer = document.getElementById('lyricscontainer')
-    resizeContainer.innerHTML = ''
+    container = document.getElementById('lyricscontainer')
+    container.innerHTML = ''
   }
-  resizeLeftContainer = topContainer
+  container.style = 'position:fixed; right:0px; background:white; z-index:10; font-size:1.4rem; border:none; border-radius:none;'
+  container.style.top = top + 'px'
+  container.style.width = w + 'px'
 
   return document.getElementById('lyricscontainer')
 }
 
 function hideLyrics () {
   if (document.getElementById('lyricscontainer')) {
-    document.getElementById('lyricscontainer').parentNode.removeChild(document.getElementById('lyricscontainer'))
-    const topContainer = document.querySelector('.Root__top-container')
-    topContainer.style.width = '100%'
-    topContainer.style.removeProperty('float')
+    document.getElementById('lyricscontainer').remove()
   }
   addLyricsButton()
 }
@@ -600,19 +638,9 @@ function showLyrics (song, searchresultsLengths) {
   separator.appendChild(document.createTextNode('•'))
 
   const bar = document.createElement('div')
+  bar.setAttribute('class', 'lyricsbar')
   bar.style.fontSize = '0.7em'
   container.appendChild(bar)
-
-  // Resize button
-  const resizeButton = document.createElement('span')
-  resizeButton.style.fontSize = '1.8em'
-  resizeButton.style.cursor = 'ew-resize'
-  resizeButton.style.color = 'white'
-  resizeButton.appendChild(document.createTextNode('⇹'))
-  resizeButton.addEventListener('mousedown', initResize)
-  bar.appendChild(resizeButton)
-
-  bar.appendChild(separator.cloneNode(true))
 
   // Hide button
   const hideButton = document.createElement('a')
@@ -671,15 +699,21 @@ function showLyrics (song, searchresultsLengths) {
 
   const iframe = document.createElement('iframe')
   iframe.id = 'lyricsiframe'
+  iframe.style.backgroundColor = 'white'
   container.appendChild(iframe)
-  const spinner = '<style>.loadingspinner { pointer-events: none; width: 2.5em; height: 2.5em; border: 0.4em solid transparent; border-color: rgb(255, 255, 100) #181818 #181818 #181818; border-radius: 50%; animation: loadingspin 2s ease infinite;} @keyframes loadingspin { 25% { transform: rotate(90deg) } 50% { transform: rotate(180deg) } 75% { transform: rotate(270deg) } 100% { transform: rotate(360deg) }}</style><div class="loadingspinner"></div>'
+
+  const showIframe = function showFrame () { iframe.style.visibility = 'visible' }
+
+  const spinner = '<style>.loadingspinner { pointer-events: none; width: 2.5em; height: 2.5em; border: 0.4em solid transparent; border-color: rgb(255, 255, 100) #181818 #181818 #181818; border-radius: 50%; animation: loadingspin 2s ease infinite;} @keyframes loadingspin { 25% { transform: rotate(90deg) } 50% { transform: rotate(180deg) } 75% { transform: rotate(270deg) } 100% { transform: rotate(360deg) }}.lorem {font-size: 1.2rem;line-height: 2rem;letter-spacing: 0.2rem;}.lorem .white {background:white;color:white} .lorem .gray {background:rgb(204, 204, 204);color:rgb(204, 204, 204)}</style><div class="loadingspinner"></div><div class="lorem">' + loremIpsum() + '</div>'
+
   if (isFirefox) {
     iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(spinner)
   } else {
-    iframe.src = emptySpotifyURL + '?405#html,' + encodeURIComponent(spinner)
+    iframe.src = emptyYoutubeURL + '?405#html,' + encodeURIComponent(spinner)
+    iframe.style.visibility = 'hidden'
+    window.setTimeout(showIframe, 5000) // Fallback
   }
-  iframe.style.width = container.clientWidth - 1 + 'px'
-  iframe.style.height = (document.querySelector('.Root__top-container').clientHeight - bar.clientHeight) + 'px'
+  setFrameWidthHeight(container, iframe)
   loadGeniusSong(song, function loadGeniusSongCb (html) {
     if (annotationsEnabled) {
       loadGeniusAnnotations(song, html, function loadGeniusAnnotationsCb (song, html, annotations) {
@@ -687,9 +721,8 @@ function showLyrics (song, searchresultsLengths) {
           if (isFirefox) {
             iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(html)
           } else {
-            iframe.src = emptySpotifyURL+'#html:scripts,' + encodeURIComponent(html)
+            iframe.src = emptyYoutubeURL + '#html:scripts,' + encodeURIComponent(html)
           }
-          iframe.style.position = 'fixed'
         })
       })
     } else {
@@ -697,9 +730,8 @@ function showLyrics (song, searchresultsLengths) {
         if (isFirefox) {
           iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(html)
         } else {
-          iframe.src = emptySpotifyURL+'#html:scripts,' + encodeURIComponent(html)
+          iframe.src = emptyYoutubeURL + '#html:scripts,' + encodeURIComponent(html)
         }
-        iframe.style.position = 'fixed'
       })
     }
   })
@@ -740,14 +772,19 @@ function listSongs (hits, container, query) {
   })
 
   // List search results
-  const trackhtml = '<div class="tracklist-col position-outer"><div class="tracklist-play-pause tracklist-top-align"><span style="color:silver;font-size:2.0em">🅖</span></div><div class="position tracklist-top-align"><span style="font-size:1.5em">📄</span></div></div><div class="tracklist-col name"><div class="track-name-wrapper tracklist-top-align"><div class="tracklist-name ellipsis-one-line" dir="auto">$title</div><div class="second-line"><span class="TrackListRow__explicit-label">$lyrics_state</span><span class="ellipsis-one-line" dir="auto"><a tabindex="-1" class="tracklist-row__artist-name-link" href="#">$artist</a></span><span class="second-line-separator" aria-label="in album">•</span><span class="ellipsis-one-line" dir="auto"><a tabindex="-1" class="tracklist-row__album-name-link" href="#">👁 <span style="font-size:0.8em">$stats.pageviews</span></a></span></div></div></div>'
-  container.innerHTML = '<section class="tracklist-container"><ol class="tracklist" style="width:99%"></ol></section>'
+  const trackhtml = '<div style="float:left;"><div class="onhover" style="margin-top:-0.25em;display:none"><span style="color:black;font-size:2.0em">🅖</span></div><div class="onout"><span style="font-size:1.5em">📄</span></div></div>' +
+  '<div style="float:left; margin-left:5px">$artist • $title <br><span style="font-size:0.7em">👁 $stats.pageviews $lyrics_state</span></div><div style="clear:left;"></div>'
+  container.innerHTML = '<ol class="tracklist" style="width:99%; font-size:1.15em"></ol>'
+
+  container.style.border = '1px solid black'
+  container.style.borderRadius = '3px'
 
   container.insertBefore(hideButton, container.firstChild)
   container.insertBefore(separator, container.firstChild)
   container.insertBefore(backToSearchButton, container.firstChild)
 
   const ol = container.querySelector('ol.tracklist')
+  ol.style.listStyle = 'none'
   const searchresultsLengths = hits.length
   const title = currentTitle
   const artists = currentArtists
@@ -755,31 +792,145 @@ function listSongs (hits, container, query) {
     rememberLyricsSelection(title, artists, this.dataset.hit)
     showLyrics(JSON.parse(this.dataset.hit), searchresultsLengths)
   }
+  const mouseover = function onmouseover () {
+    this.querySelector('.onhover').style.display = 'block'
+    this.querySelector('.onout').style.display = 'none'
+    this.style.backgroundColor = 'rgb(200, 200, 200)'
+  }
+  const mouseout = function onmouseout () {
+    this.querySelector('.onhover').style.display = 'none'
+    this.querySelector('.onout').style.display = 'block'
+    this.style.backgroundColor = 'rgb(255, 255, 255)'
+  }
+
   hits.forEach(function forEachHit (hit) {
     let li = document.createElement('li')
-    li.setAttribute('class', 'tracklist-row')
-    li.setAttribute('role', 'button')
+    li.style.cursor = 'pointer'
+    li.style.transition = 'background-color 0.2s'
+    li.style.padding = '3px'
+    li.style.margin = '2px'
+    li.style.borderRadius = '3px'
     li.innerHTML = trackhtml.replace(/\$title/g, hit.result.title_with_featured).replace(/\$artist/g, hit.result.primary_artist.name).replace(/\$lyrics_state/g, hit.result.lyrics_state).replace(/\$stats\.pageviews/g, metricPrefix(hit.result.stats.pageviews, 1))
     li.dataset.hit = JSON.stringify(hit)
 
     li.addEventListener('click', onclick)
+    li.addEventListener('mouseover', mouseover)
+    li.addEventListener('mouseout', mouseout)
     ol.appendChild(li)
   })
 }
 
 function addLyrics (force, beLessSpecific) {
-  let songTitle = document.querySelector('.track-info__name.ellipsis-one-line').innerText
-  let feat = songTitle.indexOf(' (feat')
+  let isMusic = false
+  const videoTitle = document.querySelector('#container .title').textContent.toLowerCase()
+  if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
+    isMusic = true
+  }
+  if (videoTitle.match(/.+\s+-\s+.+/)) {
+    isMusic = true
+  }
+
+  let videoDetails
+  try {
+    videoDetails = JSON.parse(unsafeWindow.document.querySelector('ytd-app').__data.data.player.args.player_response).videoDetails
+  } catch (e) {
+    videoDetails = {'keywords': []}
+  }
+  if (!videoDetails.keywords) {
+    videoDetails.keywords = []
+  }
+
+  const keywords = videoDetails.keywords.join('').toLowerCase()
+  for (let i = 0; i < musicKeywords.length; i++) {
+    if (keywords.indexOf(musicKeywords[i]) !== -1) {
+      isMusic = true
+      break
+    }
+  }
+
+  if (!isMusic) {
+    /* if(document.location.href != window.myloc) {
+      alert("is not music")
+    }
+    window.myloc = document.location.href
+    */
+    hideLyrics()
+    return
+  }
+
+  let songArtists, songArtistsArr
+  let songTitle = videoTitle.replace(/\(.+?\)/, '')
+  songTitle = songTitle.replace(/\[.+?\]/, '')
+  songTitle = songTitle.replace(/official\s*music\s*video/, '')
+  songTitle = songTitle.replace(/official\s*video/, '')
+  songTitle = songTitle.replace(/music\s*video/, '')
+  songTitle = songTitle.replace(/video/, '')
+  songTitle = songTitle.replace(/music/, '')
+  songTitle = songTitle.replace(/exclusive\s*-?/, '')
+  songTitle = songTitle.trim()
+
+  // Pattern: Artist  - Song title
+  songTitle = songTitle.split(/\s+-\s+/)
+
+  if (songTitle.length === 1) {
+    // Pattern: Artist | Song title
+    let m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
+    if (m) {
+      songTitle = [m[1], m[2]]
+    }
+  }
+
+  if (songTitle.length === 1) {
+    // Pattern: Artist "Song title"
+    let m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
+    if (m) {
+      songTitle = [m[1], m[2]]
+    }
+  }
+
+  if (songTitle.length === 1) {
+    // Pattern: Songtitle by Artist
+    let m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
+    if (m) {
+      songTitle = [m[2], m[1]]
+    }
+  }
+
+  if (songTitle.length === 1 && 'author' in videoDetails) {
+    // Fallback to video author name
+    songArtists = videoDetails.author.toLowerCase()
+    songArtists = songArtists.replace(/vevo/, '')
+    songArtists = songArtists.replace(/official/, '')
+    songArtists = songArtists.replace(/music/, '')
+    songArtists = songArtists.replace(/band/, '')
+  } else {
+    songArtists = songTitle.shift().trim()
+  }
+
+  songArtistsArr = songArtists.split(',')
+  songTitle = songTitle.join(' - ').trim()
+
+  songTitle = songTitle.replace('"', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace('|', '')
+  songTitle = songTitle.replace(/\W+$/, '')
+  songTitle = songTitle.replace(/^\W+/, '')
+  songTitle = songTitle.trim()
+
+  let feat = songTitle.indexOf(' feat')
   if (feat !== -1) {
     songTitle = songTitle.substring(0, feat).trim()
   }
-  const musicIsPlaying = document.querySelector('.now-playing-bar .player-controls__buttons .control-button.control-button--circled').className.toLowerCase().indexOf('pause') !== -1
-  const songArtistsArr = []
-  document.querySelector('.track-info__artists.ellipsis-one-line').querySelectorAll('a[href^="/artist/"]').forEach((e) => songArtistsArr.push(e.innerText))
-  let songArtists = songArtistsArr.join(' ')
+  feat = songTitle.indexOf(' ft')
+  if (feat !== -1) {
+    songTitle = songTitle.substring(0, feat).trim()
+  }
+
+  const musicIsPlaying = document.querySelector('.ytp-play-button.ytp-button').title.indexOf('Pause') !== -1
   if (force || (!document.hidden && musicIsPlaying && (currentTitle !== songTitle || currentArtists !== songArtists))) {
     currentTitle = songTitle
     currentArtists = songArtists
+
+    // window.setTimeout(function() {alert(currentTitle+'\n'+currentArtists)},1)
+
     const firstArtist = songArtistsArr[0]
     let simpleTitle = songTitle = songTitle.replace(/\s*-\s*.+?$/, '') // Remove anything following the last dash
     if (beLessSpecific) {
@@ -855,9 +1006,10 @@ function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
   }
+  const top = calcContainerWidthTop()[1]
   const b = document.createElement('div')
   b.setAttribute('id', 'showlyricsbutton')
-  b.setAttribute('style', 'position:absolute; top: 0px; right:0px; color:#ffff64; cursor:pointer')
+  b.setAttribute('style', 'position:absolute;top:' + (top + 2) + 'px;right:0px;color:#ffff64;cursor:pointer;background:black;border-radius:50%;margin:auto;text-align:center;font-size:15px;line-height:15px;')
   b.setAttribute('title', 'Load lyrics from genius.com')
   b.appendChild(document.createTextNode('🅖'))
   b.addEventListener('click', function onShowLyricsButtonClick () {
@@ -870,27 +1022,19 @@ function addLyricsButton () {
 
 function config () {
   loadCache()
-
-  // Blur background
-  if (document.querySelector('.Root__top-container')) {
-     document.querySelector('.Root__top-container').style.filter = 'blur(4px)';
-  }
-  if (document.getElementById('lyricscontainer')) {
-     document.getElementById('lyricscontainer').style.filter = 'blur(1px)';
-  }
-
+  const top = calcContainerWidthTop()[1]
   const win = document.createElement('div')
   win.setAttribute('id', 'myconfigwin39457845')
-  win.setAttribute('style', 'position:absolute; top: 10px; right:10px; padding:15px; background:white; border-radius:10%; border:2px solid black; color:black; z-index:10')
+  win.setAttribute('style', 'position:absolute; top: ' + (top + 10) + 'px; right:10px; padding:15px; background:white; border-radius:10%; border:2px solid black; color:black; z-index:10; font-size:1.4rem')
   let style = win.appendChild(document.createElement('style'))
   style.innerHTML += '#myconfigwin39457845 div {margin:2px 0; padding:5px;border-radius: 5px;background-color: #EFEFEF;}'
   document.body.appendChild(win)
   const h1 = document.createElement('h1')
   win.appendChild(h1).appendChild(document.createTextNode('Options'))
   const a = document.createElement('a')
-  a.href = 'https://github.com/cvzi/Spotify-Genius-Lyrics-userscript/issues'
+  a.href = 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues'
   a.style = 'color:blue'
-  win.appendChild(a).appendChild(document.createTextNode('Report problem: github.com/cvzi/Spotify-Genius-Lyrics-userscript'))
+  win.appendChild(a).appendChild(document.createTextNode('Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript'))
 
   // Switch: Show automatically
   let div = win.appendChild(document.createElement('div'))
@@ -961,13 +1105,6 @@ function config () {
   closeButton.style.color = 'black'
   closeButton.addEventListener('click', function onCloseButtonClick () {
     win.parentNode.removeChild(win)
-    // Un-blur background
-    if(document.querySelector('.Root__top-container')) {
-       document.querySelector('.Root__top-container').style.filter = '';
-    }
-    if (document.getElementById('lyricscontainer')) {
-       document.getElementById('lyricscontainer').style.filter = '';
-    }
   })
 
   const bytes = metricPrefix(JSON.stringify(selectionCache).length + JSON.stringify(requestCache).length, 2, 1024) + 'Bytes'
@@ -982,11 +1119,15 @@ function config () {
 }
 
 function main () {
-  if (document.querySelector('.now-playing')) {
+  if (document.querySelector('#container .title') && document.querySelector('#container .title').textContent) {
     if (optionAutoShow) {
       addLyrics()
     } else {
       addLyricsButton()
+    }
+    if (resizeOnNextRun) {
+      resizeOnNextRun = false
+      onResize()
     }
   }
 }
@@ -1005,18 +1146,20 @@ function main () {
     theme = themes[themeKey]
     annotationsEnabled = !!values[1]
 
-    if (!isFirefox && document.location.href.startsWith(emptySpotifyURL + '#html:scripts,')) {
+    if (!isFirefox && document.location.href.startsWith(emptyYoutubeURL + '#html:scripts,')) {
       const [script, onload] = theme.scripts()
       document.write(decodeURIComponent(document.location.hash.split('#html:scripts,')[1]))
       window.setTimeout(function () {
         eval(script.join('\n') + '\n' + onload.join('\n'))
+        window.top.document.getElementById('lyricsiframe').style.visibility = 'visible'
       }, 1000)
-    } else if (!isFirefox && document.location.href.startsWith(emptySpotifyURL + '?405#html,')) {
+    } else if (!isFirefox && document.location.href.startsWith(emptyYoutubeURL + '?405#html,')) {
       document.write(decodeURIComponent(document.location.hash.split('#html,')[1]))
+      window.top.document.getElementById('lyricsiframe').style.visibility = 'visible'
     } else {
       loadCache()
       mainIv = window.setInterval(main, 2000)
-      window.addEventListener('resize', onResize)
+      window.addEventListener('resize', () => window.setTimeout(function () { resizeOnNextRun = true }, 200))
     }
   })
 })()

@@ -5,7 +5,7 @@
 // @copyright    2019, cuzi (https://github.com/cvzi)
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      1
+// @version      2
 // @include      https://www.youtube.com/*
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -13,6 +13,10 @@
 // @grant        unsafeWindow
 // @connect      genius.com
 // ==/UserScript==
+
+/* global alert, GM, unsafeWindow */
+
+'use strict'
 
 const isFirefox = typeof InstallTrigger !== 'undefined'
 const emptyYoutubeURL = 'https://www.youtube.com/robots.txt'
@@ -247,8 +251,8 @@ const themes = {
   'genius': {
     'name': 'Genius (Default)',
     'scripts': function themeGeniusScripts () {
-      const script = []
-      const onload = []
+      const script = ['"use strict";']
+      const onload = ['"use strict";']
 
       // Define globals
       script.push('var iv458,annotations1234;')
@@ -383,8 +387,8 @@ const themes = {
   'cleanwhite': {
     'name': 'Clean white',
     'scripts': function themeCleanWhiteScripts () {
-      const script = []
-      const onload = []
+      const script = ['"use strict";']
+      const onload = ['"use strict";']
 
       // Define globals
       script.push('var iv458,annotations1234;')
@@ -430,7 +434,7 @@ const themes = {
       script.push('    const div0 = document.createElement("div")')
       script.push('    div0.className = "annotationcontent"')
       script.push('    main.appendChild(div0)')
-      script.push('    html = \'<div class="annotationlabel">$author</div><div class="annotation_rich_text_formatting">$body</div>\';')
+      script.push('    let html = \'<div class="annotationlabel">$author</div><div class="annotation_rich_text_formatting">$body</div>\';')
       script.push('    html = html.replace(/\\$body/g, decodeHTML652(annotation.body.html)).replace(/\\$author/g, decodeHTML652(annotation.created_by.name));')
       script.push('    div0.innerHTML = html')
       script.push('    targetBlankLinks145 (); // Change link target to _blank')
@@ -822,12 +826,19 @@ function listSongs (hits, container, query) {
 }
 
 function addLyrics (force, beLessSpecific) {
+  const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
+  if (!h1 || !document.querySelector('ytd-watch-flexy div#primary video')) {
+    // Not a video page or video page not visible
+    hideLyrics()
+    return
+  }
+
   let isMusic = false
-  const videoTitle = document.querySelector('#container .title').textContent.toLowerCase()
+  const videoTitle = h1.textContent.toLowerCase()
   if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
     isMusic = true
   }
-  if (videoTitle.match(/.+\s+-\s+.+/)) {
+  if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
     isMusic = true
   }
 
@@ -871,7 +882,7 @@ function addLyrics (force, beLessSpecific) {
   songTitle = songTitle.trim()
 
   // Pattern: Artist  - Song title
-  songTitle = songTitle.split(/\s+-\s+/)
+  songTitle = songTitle.split(/\s+[-–]\s+/)
 
   if (songTitle.length === 1) {
     // Pattern: Artist | Song title
@@ -1151,7 +1162,7 @@ function main () {
       const [script, onload] = theme.scripts()
       document.write(decodeURIComponent(document.location.hash.split('#html:scripts,')[1]))
       window.setTimeout(function () {
-        eval(script.join('\n') + '\n' + onload.join('\n'))
+        (new Function('"use strict";' + script.join('\n') + '\n' + onload.join('\n')))()
         window.top.document.getElementById('lyricsiframe').style.visibility = 'visible'
       }, 1000)
     } else if (!isFirefox && document.location.href.startsWith(emptyYoutubeURL + '?405#html,')) {

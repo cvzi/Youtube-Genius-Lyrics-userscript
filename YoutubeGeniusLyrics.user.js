@@ -5,7 +5,7 @@
 // @copyright    2019, cuzi (https://github.com/cvzi)
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      2
+// @version      3
 // @include      https://www.youtube.com/*
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -57,9 +57,9 @@ function metricPrefix (n, decimals, k) {
     return String(n)
   }
   k = k || 1000
-  let dm = decimals <= 0 ? 0 : decimals || 2
-  let sizes = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-  let i = Math.floor(Math.log(n) / Math.log(k))
+  const dm = decimals <= 0 ? 0 : decimals || 2
+  const sizes = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+  const i = Math.floor(Math.log(n) / Math.log(k))
   return parseFloat((n / Math.pow(k, i)).toFixed(dm)) + sizes[i]
 }
 
@@ -70,7 +70,7 @@ function loremIpsum () {
   let text = ''
   for (let v = 0; v < random(5); v++) {
     for (let b = 0; b < random(6); b++) {
-      let line = []
+      const line = []
       for (let l = 0; l < random(9); l++) {
         for (let w = 0; w < 1 + random(10); w++) {
           for (let i = 0; i < 1 + random(7); i++) {
@@ -105,7 +105,7 @@ function loadCache () {
     */
     const now = (new Date()).getTime()
     const exp = 2 * 60 * 60 * 1000
-    for (let prop in requestCache) {
+    for (const prop in requestCache) {
       // Delete cached values, that are older than 2 hours
       const time = requestCache[prop].split('\n')[0]
       if ((now - (new Date(time)).getTime()) > exp) {
@@ -122,9 +122,9 @@ function request (obj) {
   }
 
   let headers = {
-    'Referer': obj.url,
+    Referer: obj.url,
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'Host': getHostname(obj.url),
+    Host: getHostname(obj.url),
     'User-Agent': navigator.userAgent
   }
   if (obj.headers) {
@@ -235,7 +235,7 @@ function loadGeniusAnnotations (song, html, cb) {
           })
         })
       } else {
-        for (let refId in r.referents) {
+        for (const refId in r.referents) {
           const referent = r.referents[refId]
           referent.annotations.forEach(function forEachAnnotation (annotation) {
             annotations[annotation.id] = annotation
@@ -248,9 +248,9 @@ function loadGeniusAnnotations (song, html, cb) {
 }
 
 const themes = {
-  'genius': {
-    'name': 'Genius (Default)',
-    'scripts': function themeGeniusScripts () {
+  genius: {
+    name: 'Genius (Default)',
+    scripts: function themeGeniusScripts () {
       const script = ['"use strict";']
       const onload = ['"use strict";']
 
@@ -352,7 +352,7 @@ const themes = {
 
       return [script, onload]
     },
-    'combine': function themeGeniusCombineGeniusResources (script, onload, song, html, annotations, cb) {
+    combine: function themeGeniusCombineGeniusResources (script, onload, song, html, annotations, cb) {
       let headhtml = ''
 
       // Make annotations clickable
@@ -384,9 +384,9 @@ const themes = {
       return cb(html)
     }
   },
-  'cleanwhite': {
-    'name': 'Clean white',
-    'scripts': function themeCleanWhiteScripts () {
+  cleanwhite: {
+    name: 'Clean white',
+    scripts: function themeCleanWhiteScripts () {
       const script = ['"use strict";']
       const onload = ['"use strict";']
 
@@ -507,7 +507,7 @@ const themes = {
 
       return [script, onload]
     },
-    'combine': function themeCleanWhiteXombineGeniusResources (script, onload, song, html, annotations, cb) {
+    combine: function themeCleanWhiteXombineGeniusResources (script, onload, song, html, annotations, cb) {
       let headhtml = ''
 
       // Make annotations clickable
@@ -518,10 +518,10 @@ const themes = {
       html = html.replace(/<script defer="true" src="https:\/\/cdn.cookielaw.org.+?"/, '<script ')
 
       // Extract lyrics
-      let lyrics = '<div class="mylyrics song_body-lyrics">' + html.split('class="lyrics">')[1].split('</div>')[0] + '</div>'
+      const lyrics = '<div class="mylyrics song_body-lyrics">' + html.split('class="lyrics">')[1].split('</div>')[0] + '</div>'
 
       // Extract title
-      let title = '<div class="header_with_cover_art-primary_info">' + html.split('class="header_with_cover_art-primary_info">')[1].split('</div>').slice(0, 3).join('</div>') + '</div></div>'
+      const title = '<div class="header_with_cover_art-primary_info">' + html.split('class="header_with_cover_art-primary_info">')[1].split('</div>').slice(0, 3).join('</div>') + '</div></div>'
 
       // Remove body content, add onload attribute to body, hide horizontal scroll bar, add lyrics
       let parts = html.split('<body', 2)
@@ -620,7 +620,7 @@ function getCleanLyricsContainer () {
     container = document.getElementById('lyricscontainer')
     container.innerHTML = ''
   }
-  container.style = 'position:fixed; right:0px; background:white; z-index:10; font-size:1.4rem; border:none; border-radius:none;'
+  container.style = ''
   container.style.top = top + 'px'
   container.style.width = w + 'px'
 
@@ -644,7 +644,6 @@ function showLyrics (song, searchresultsLengths) {
 
   const bar = document.createElement('div')
   bar.setAttribute('class', 'lyricsbar')
-  bar.style.fontSize = '0.7em'
   container.appendChild(bar)
 
   // Hide button
@@ -653,7 +652,7 @@ function showLyrics (song, searchresultsLengths) {
   hideButton.appendChild(document.createTextNode('Hide'))
   hideButton.addEventListener('click', function hideButtonClick (ev) {
     ev.preventDefault()
-    optionAutoShow = false  // Temporarily disable showing lyrics automatically on song change
+    optionAutoShow = false // Temporarily disable showing lyrics automatically on song change
     clearInterval(mainIv)
     hideLyrics()
   })
@@ -693,7 +692,7 @@ function showLyrics (song, searchresultsLengths) {
     if (searchresultsLengths === true) {
       backbutton.appendChild(document.createTextNode('Back to search results'))
     } else {
-      backbutton.appendChild(document.createTextNode('Back to search (' + (searchresultsLengths - 1) + ' other result' + (searchresultsLengths === 2 ? '' : 's') + ')'))
+      backbutton.appendChild(document.createTextNode('Back to search (' + ((searchresultsLengths - 1) === 0 ? 'no' : (searchresultsLengths - 1)) + ' other result' + (searchresultsLengths === 2 ? '' : 's') + ')'))
     }
     backbutton.addEventListener('click', function backbuttonClick (ev) {
       ev.preventDefault()
@@ -809,7 +808,7 @@ function listSongs (hits, container, query) {
   }
 
   hits.forEach(function forEachHit (hit) {
-    let li = document.createElement('li')
+    const li = document.createElement('li')
     li.style.cursor = 'pointer'
     li.style.transition = 'background-color 0.2s'
     li.style.padding = '3px'
@@ -846,7 +845,7 @@ function addLyrics (force, beLessSpecific) {
   try {
     videoDetails = JSON.parse(unsafeWindow.document.querySelector('ytd-app').__data.data.player.args.player_response).videoDetails
   } catch (e) {
-    videoDetails = {'keywords': []}
+    videoDetails = { keywords: [] }
   }
   if (!videoDetails.keywords) {
     videoDetails.keywords = []
@@ -870,7 +869,7 @@ function addLyrics (force, beLessSpecific) {
     return
   }
 
-  let songArtists, songArtistsArr
+  let songArtists
   let songTitle = videoTitle.replace(/\(.+?\)/, '')
   songTitle = songTitle.replace(/\[.+?\]/, '')
   songTitle = songTitle.replace(/official\s*music\s*video/, '')
@@ -886,7 +885,7 @@ function addLyrics (force, beLessSpecific) {
 
   if (songTitle.length === 1) {
     // Pattern: Artist | Song title
-    let m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
+    const m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
     if (m) {
       songTitle = [m[1], m[2]]
     }
@@ -894,7 +893,7 @@ function addLyrics (force, beLessSpecific) {
 
   if (songTitle.length === 1) {
     // Pattern: Artist "Song title"
-    let m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
+    const m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
     if (m) {
       songTitle = [m[1], m[2]]
     }
@@ -902,7 +901,7 @@ function addLyrics (force, beLessSpecific) {
 
   if (songTitle.length === 1) {
     // Pattern: Songtitle by Artist
-    let m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
+    const m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
     if (m) {
       songTitle = [m[2], m[1]]
     }
@@ -919,7 +918,7 @@ function addLyrics (force, beLessSpecific) {
     songArtists = songTitle.shift().trim()
   }
 
-  songArtistsArr = songArtists.split(',')
+  const songArtistsArr = songArtists.split(',')
   songTitle = songTitle.join(' - ').trim()
 
   songTitle = songTitle.replace('"', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace('|', '')
@@ -944,12 +943,12 @@ function addLyrics (force, beLessSpecific) {
     // window.setTimeout(function() {alert(currentTitle+'\n'+currentArtists)},1)
 
     const firstArtist = songArtistsArr[0]
-    let simpleTitle = songTitle = songTitle.replace(/\s*-\s*.+?$/, '') // Remove anything following the last dash
+    const simpleTitle = songTitle = songTitle.replace(/\s*-\s*.+?$/, '') // Remove anything following the last dash
     if (beLessSpecific) {
       songArtists = firstArtist
       songTitle = simpleTitle
     }
-    let hitFromCache = getLyricsSelection(songTitle, songArtists)
+    const hitFromCache = getLyricsSelection(songTitle, songArtists)
     if (!force && hitFromCache) {
       showLyrics(hitFromCache, true)
     } else {
@@ -986,11 +985,20 @@ function searchByQuery (query, container) {
 
 function showSearchField (query) {
   const b = getCleanLyricsContainer()
-  b.appendChild(document.createTextNode('Search genius.com'))
+
+  b.style.border = '1px solid black'
+  b.style.borderRadius = '3px'
+  b.style.padding = '5px'
+
+  b.appendChild(document.createTextNode('Search genius.com: '))
   b.style.paddingRight = '15px'
   const input = b.appendChild(document.createElement('input'))
   input.className = 'SearchInputBox__input'
   input.placeholder = 'Search genius.com...'
+
+  const span = b.appendChild(document.createElement('span'))
+  span.style = 'cursor:pointer'
+  span.appendChild(document.createTextNode(' \uD83D\uDD0D'))
 
   if (query) {
     input.value = query
@@ -1010,6 +1018,12 @@ function showSearchField (query) {
       }
     }
   })
+  span.addEventListener('click', function onSearchLyricsKeyUp (ev) {
+    if (input.value) {
+      searchByQuery(input.value, b)
+    }
+  })
+
   document.body.appendChild(b)
   input.focus()
 }
@@ -1025,7 +1039,7 @@ function addLyricsButton () {
   b.setAttribute('title', 'Load lyrics from genius.com')
   b.appendChild(document.createTextNode('🅖'))
   b.addEventListener('click', function onShowLyricsButtonClick () {
-    optionAutoShow = true  // Temporarily enable showing lyrics automatically on song change
+    optionAutoShow = true // Temporarily enable showing lyrics automatically on song change
     mainIv = window.setInterval(main, 2000)
     addLyrics(true)
   })
@@ -1037,9 +1051,7 @@ function config () {
   const top = calcContainerWidthTop()[1]
   const win = document.createElement('div')
   win.setAttribute('id', 'myconfigwin39457845')
-  win.setAttribute('style', 'position:absolute; top: ' + (top + 10) + 'px; right:10px; padding:15px; background:white; border-radius:10%; border:2px solid black; color:black; z-index:10; font-size:1.4rem')
-  let style = win.appendChild(document.createElement('style'))
-  style.innerHTML += '#myconfigwin39457845 div {margin:2px 0; padding:5px;border-radius: 5px;background-color: #EFEFEF;}'
+  win.style.top = (top + 10) + 'px'
   document.body.appendChild(win)
   const h1 = document.createElement('h1')
   win.appendChild(h1).appendChild(document.createTextNode('Options'))
@@ -1071,7 +1083,7 @@ function config () {
   div = win.appendChild(document.createElement('div'))
   div.appendChild(document.createTextNode('Theme: '))
   const selectTheme = div.appendChild(document.createElement('select'))
-  for (let key in themes) {
+  for (const key in themes) {
     const option = selectTheme.appendChild(document.createElement('option'))
     option.value = key
     if (themeKey === key) {
@@ -1130,7 +1142,53 @@ function config () {
   })
 }
 
+let cssAdded = false
+function addCSS () {
+  if (cssAdded) {
+    return
+  }
+  cssAdded = true
+  document.head.appendChild(document.createElement('style')).innerHTML = `
+  .lyricsbar {
+    font-size : 0.7em;
+    text-align:right;
+    padding-right:10px
+   }
+  .lyricsbar a,.lyricsbar a:link,.lyricsbar a:visited  {
+    color:#606060;
+    text-decoration:none;
+   }
+  #lyricscontainer {
+    position:fixed;
+    right:0px;
+    background:white;
+    z-index:10;
+    font-size:1.4rem;
+    border:none;
+    border-radius:none;
+  }
+  #myconfigwin39457845 {
+    position:absolute;
+    right:10px;
+    padding:15px;
+    background:white;
+    border-radius:10%;
+    border:2px solid black;
+    color:black;
+    z-index:10;
+    font-size:1.4rem
+  }
+  #myconfigwin39457845 div {
+    margin:2px 0;
+    padding:5px;
+    border-radius: 5px;
+    background-color: #EFEFEF
+  }
+  `
+}
+
 function main () {
+  addCSS()
   if (document.querySelector('#container .title') && document.querySelector('#container .title').textContent) {
     if (optionAutoShow) {
       addLyrics()
@@ -1149,7 +1207,7 @@ function main () {
     GM.getValue('theme', themeKey),
     GM.getValue('annotationsenabled', annotationsEnabled)
   ]).then(function (values) {
-    if (themes.hasOwnProperty(values[0])) {
+    if (Object.prototype.hasOwnProperty.call(themes, values[0])) {
       themeKey = values[0]
     } else {
       console.log('Invalid value for theme key: GM.getValue("theme") = ' + values[0])

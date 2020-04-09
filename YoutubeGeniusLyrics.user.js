@@ -6,7 +6,7 @@
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
 // @version      4
-// @require      https://github.com/cvzi/GeniusLyricsUserscriptLibrary/raw/master/GeniusLyrics.js
+// @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
 // @grant        GM.getValue
@@ -36,6 +36,7 @@ const musicDescriptors = [
   'Music video',
   'Composer',
   'Lyricist',
+  'full track',
   'vevo.ly',
   'Provided to YouTube by ',
   'Columbia Records',
@@ -67,7 +68,8 @@ function addCss () {
   .lyricsnavbar {
     font-size : 0.7em;
     text-align:right;
-    padding-right:10px
+    padding-right:10px;
+    background:#fafafa;
    }
   .lyricsnavbar span,.lyricsnavbar a:link,.lyricsnavbar a:visited  {
     color:#606060;
@@ -100,11 +102,19 @@ function addCss () {
 function calcContainerWidthTop () {
   let w
   const upnext = document.getElementById('upnext')
-  if (upnext) {
+  const playlist = document.querySelector('ytd-playlist-panel-renderer#playlist')
+  const video = document.querySelector('ytd-watch-flexy div#primary video')
+
+  if (upnext && upnext.getBoundingClientRect().left > 0) {
     w = window.innerWidth - upnext.getBoundingClientRect().left - 5
+  } else if (playlist && playlist.getBoundingClientRect().left > 0) {
+    w = window.innerWidth - playlist.getBoundingClientRect().left - 5
+  } else if (video) {
+    w = window.innerWidth - 1.02 * video.getClientRects()[0].right
   } else {
-    w = window.innerWidth - 1.02 * document.querySelector('ytd-watch-flexy div#primary video').getClientRects()[0].right
+    w = window.innerWidth * 0.45
   }
+  w = Math.min(window.innerWidth * 0.75, w)
   const top = document.getElementById('masthead-container').clientHeight
   return [w, top]
 }
@@ -195,14 +205,12 @@ function addLyricsButton () {
 
 var lastVideoId = null
 function addLyrics (force, beLessSpecific) {
-  // TODO https://www.youtube.com/watch?v=XK8kZGGx_NM should be recognized
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
   if (!h1 || !document.querySelector('ytd-watch-flexy div#primary video')) {
     // Not a video page or video page not visible
     hideLyrics()
     return
   }
-
   let isMusic = false
   const videoTitle = h1.textContent.toLowerCase()
   if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
@@ -211,7 +219,6 @@ function addLyrics (force, beLessSpecific) {
   if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
     isMusic = true
   }
-
   let videoDetails
   try {
     videoDetails = JSON.parse(unsafeWindow.document.querySelector('ytd-app').__data.data.player.args.player_response).videoDetails
@@ -222,16 +229,15 @@ function addLyrics (force, beLessSpecific) {
     videoDetails.keywords = []
   }
   if ('videoId' in videoDetails) {
-    if (lastVideoId === videoDetails.videoId) {
+    if (lastVideoId === videoDetails.videoId + genius.option.themeKey && document.getElementById('lyricscontainer')) {
+      // Same video id and same theme and lyrics are showing -> stop here
       return
     } else {
-      lastVideoId = videoDetails.videoId
+      lastVideoId = videoDetails.videoId + genius.option.themeKey
     }
   } else {
     lastVideoId = null
   }
-  console.log(videoDetails)
-
   const keywords = videoDetails.keywords.join('').toLowerCase()
   for (let i = 0; i < musicKeywords.length; i++) {
     if (keywords.indexOf(musicKeywords[i]) !== -1) {
@@ -239,19 +245,16 @@ function addLyrics (force, beLessSpecific) {
       break
     }
   }
-
   for (let i = 0; i < musicDescriptors.length; i++) {
     if (videoDetails.shortDescription.indexOf(musicDescriptors[i]) !== -1) {
       isMusic = true
       break
     }
   }
-
   if (!isMusic) {
     hideLyrics()
     return
   }
-
   let songArtists
   let songTitle = videoTitle.replace(/\(.+?\)/, '')
   songTitle = songTitle.replace(/\[.+?\]/, '')
@@ -293,7 +296,6 @@ function addLyrics (force, beLessSpecific) {
   if (songTitle.length === 1 && 'author' in videoDetails) {
     // Fallback to video author name
     songArtists = videoDetails.author.toLowerCase()
-    console.log(' video author name' + videoDetails.author)
     songArtists = songArtists.replace(/vevo/, '')
     songArtists = songArtists.replace(/official/, '')
     songArtists = songArtists.replace(/music/, '')
@@ -321,7 +323,6 @@ function addLyrics (force, beLessSpecific) {
   }
 
   const musicIsPlaying = document.querySelector('.ytp-play-button.ytp-button').title.indexOf('Pause') !== -1
-
   genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
 }
 
@@ -458,7 +459,7 @@ function loremIpsum () {
   const classWhitespace = ['<span class="white">', '</span>']
   const random = (x) => 1 + parseInt(Math.random() * x)
   let text = ''
-  for (let v = 0; v < random(5); v++) {
+  for (let v = 0; v < Math.max(3, random(5)); v++) {
     for (let b = 0; b < random(6); b++) {
       const line = []
       for (let l = 0; l < random(9); l++) {

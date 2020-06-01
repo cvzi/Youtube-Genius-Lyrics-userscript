@@ -5,7 +5,7 @@
 // @copyright    2019, cuzi (https://github.com/cvzi)
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      4
+// @version      5
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -54,7 +54,7 @@ function addCss () {
     margin:0px;
     padding:0px;
     background:white;
-    z-index:10;
+    z-index:2001;
     font-size:1.4rem;
     border:none;
     border-radius:none;
@@ -86,7 +86,7 @@ function addCss () {
       line-height:2.5em;
     }
   .loadingspinnerholder {
-    z-index:50;
+    z-index:2050;
     background-color:white;
     position:absolute;
     top:56px;

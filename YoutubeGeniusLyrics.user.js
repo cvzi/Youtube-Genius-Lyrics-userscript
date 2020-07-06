@@ -5,7 +5,7 @@
 // @copyright    2019, cuzi (https://github.com/cvzi)
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      5
+// @version      6
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -185,6 +185,7 @@ function hideLyrics () {
   addLyricsButton()
 }
 
+var checkFullscreenIV
 function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
@@ -201,6 +202,13 @@ function addLyricsButton () {
     addLyrics(true)
   })
   document.body.appendChild(b)
+
+  window.clearInterval(checkFullscreenIV)
+  checkFullscreenIV = window.setInterval(function () {
+    if (document.getElementById('showlyricsbutton')) {
+      document.getElementById('showlyricsbutton').style.display = document.fullscreenElement ? 'none' : 'block'
+    }
+  }, 1000)
 }
 
 var lastVideoId = null

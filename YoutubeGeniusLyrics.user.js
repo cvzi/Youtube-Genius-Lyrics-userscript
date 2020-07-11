@@ -21,6 +21,8 @@
 
 'use strict'
 
+var genius
+
 const musicKeywords = [
   'music', 'musik', 'album', 'single',
   'hiphop', 'hip-hop', 'hip hop', 'rap',
@@ -633,7 +635,6 @@ function newAppHint (status) {
   }
 }
 
-let genius
 if (document.location.hostname.startsWith('music')) {
   GM.getValue('newapphint', 0).then(function (status) {
     window.setTimeout(() => newAppHint(status), 3000)

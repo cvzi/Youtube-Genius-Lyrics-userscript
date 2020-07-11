@@ -3,9 +3,10 @@
 // @description  Show lyrics/songtexts from genius.com on Youtube next to music videos
 // @license      GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @copyright    2019, cuzi (https://github.com/cvzi)
+// @author       cuzi
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      6
+// @version      7
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -13,6 +14,7 @@
 // @grant        unsafeWindow
 // @connect      genius.com
 // @include      https://www.youtube.com/*
+// @include      https://music.youtube.com/*
 // ==/UserScript==
 
 /* global GM, genius, unsafeWindow, geniusLyrics */ // eslint-disable-line no-unused-vars
@@ -536,21 +538,123 @@ function main () {
   }
 }
 
-const genius = geniusLyrics({
-  GM: GM,
-  scriptName: 'YoutubeGeniusScript',
-  scriptIssuesURL: 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
-  scriptIssuesTitle: 'Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
-  domain: 'https://www.youtube.com/',
-  emptyURL: 'https://www.youtube.com/robots.txt',
-  main: main,
-  addCss: addCss,
-  listSongs: listSongs,
-  showSearchField: showSearchField,
-  addLyrics: addLyrics,
-  hideLyrics: hideLyrics,
-  getCleanLyricsContainer: getCleanLyricsContainer,
-  setFrameDimensions: setFrameDimensions,
-  onResize: onResize,
-  createSpinner: createSpinner
-})
+function newAppHint (status) {
+  if (document.location.pathname === '/robots.txt') {
+    return
+  }
+  if (status % 10 === 0) {
+    document.head.appendChild(document.createElement('style')).innerHTML = `
+    #newapphint785 {
+      position:fixed;
+      top:0%;
+      left:0%;
+      padding:10px;
+      background-color:#202020;
+      color:#bbb;
+      font-size:large;
+      border:2px solid red;
+      border-radius: 5px;
+      box-shadow: red 1px 1px 10px;
+      transition:left 500ms, top 500ms;
+      z-index:2500
+    }
+    #newapphint785 a:link, #newapphint785 a:visited {
+      color:white;
+      text-decoration:none
+    }
+    #newapphint785 a:hover {
+      color:#b0ae10;
+      text-decoration:none
+    }
+    #newapphint785 button {
+      font-size: large;
+      background: #555;
+      border: 2px outset #555;
+      margin: 3px 10px;
+      padding: 2px;
+      color: #eee;
+    }
+    #newapphint785 button:hover {
+      border: 2px outset #fff;
+      color: #fff;
+    }
+    `
+
+    const container = document.createElement('div')
+    container.id = 'newapphint785'
+    document.body.appendChild(container)
+
+    container.appendChild(document.createElement('h2')).appendChild(document.createTextNode('⚠️ Youtube Genius Lyrics 🆕'))
+    const p = container.appendChild(document.createElement('p'))
+    p.appendChild(document.createTextNode('▶️ If you would like to see lyrics here as well, you can now install a new userscript specifically for music.youtube.com:'))
+    p.appendChild(document.createElement('br'))
+    p.appendChild(document.createElement('br'))
+
+    const aSource = p.appendChild(document.createElement('a'))
+    aSource.target = '_blank'
+    aSource.href = 'https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'
+    aSource.appendChild(document.createTextNode('📑 https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'))
+
+    p.appendChild(document.createElement('br'))
+    p.appendChild(document.createElement('br'))
+
+    const aInstall = p.appendChild(document.createElement('a'))
+    aInstall.href = 'https://openuserjs.org/install/cuzi/Youtube_Music_Genius_Lyrics.user.js'
+    aInstall.appendChild(document.createTextNode('💘 Click to install new script'))
+    aInstall.addEventListener('click', function () {
+      GM.setValue('newapphint', -1).then(function () {
+        aInstall.innerHTML = 'ℹ️ Please reload (F5) the page after installing'
+      })
+    })
+
+    p.appendChild(document.createElement('br'))
+    p.appendChild(document.createElement('br'))
+
+    const remindMeLater = container.appendChild(document.createElement('button'))
+    remindMeLater.appendChild(document.createTextNode('🔜 Remind me later'))
+    remindMeLater.addEventListener('click', function () {
+      GM.setValue('newapphint', 1).then(() => container.remove())
+    })
+
+    container.appendChild(document.createElement('br'))
+
+    const doNotShowAgain = container.appendChild(document.createElement('button'))
+    doNotShowAgain.appendChild(document.createTextNode('🆗🆒 Do not show again'))
+    doNotShowAgain.addEventListener('click', function () {
+      GM.setValue('newapphint', -1).then(() => container.remove())
+    })
+
+    window.setTimeout(function () {
+      container.style.left = `calc(50% - ${container.clientWidth / 2}px)`
+      container.style.top = `calc(50% - ${container.clientHeight / 2}px)`
+    }, 100)
+  } else if (status > 0) {
+    GM.setValue('newapphint', status + 1)
+  }
+}
+
+let genius
+if (document.location.hostname.startsWith('music')) {
+  GM.getValue('newapphint', 0).then(function (status) {
+    window.setTimeout(() => newAppHint(status), 3000)
+  })
+} else {
+  genius = geniusLyrics({
+    GM: GM,
+    scriptName: 'YoutubeGeniusScript',
+    scriptIssuesURL: 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
+    scriptIssuesTitle: 'Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
+    domain: 'https://www.youtube.com/',
+    emptyURL: 'https://www.youtube.com/robots.txt',
+    main: main,
+    addCss: addCss,
+    listSongs: listSongs,
+    showSearchField: showSearchField,
+    addLyrics: addLyrics,
+    hideLyrics: hideLyrics,
+    getCleanLyricsContainer: getCleanLyricsContainer,
+    setFrameDimensions: setFrameDimensions,
+    onResize: onResize,
+    createSpinner: createSpinner
+  })
+}

@@ -541,6 +541,7 @@ function main () {
 }
 
 function newAppHint (status) {
+  // TODO should this be removed in favor of a README hint in the next version?
   if (document.location.pathname === '/robots.txt') {
     return
   }

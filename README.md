@@ -12,4 +12,4 @@ Screenshot:
 ![Screenshot of youtube music video with lyrics](screenshot.png)
 
 
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)  ![standardjs](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/workflows/standardjs/badge.svg)

@@ -66,7 +66,7 @@ function addCss () {
     border:none;
     border-radius:none;
   }
-  .lyricsiframe {
+  #lyricsiframe {
     opacity:0.1;
     transition:opacity 2s;
     margin:0px;

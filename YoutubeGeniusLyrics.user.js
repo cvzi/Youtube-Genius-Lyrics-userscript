@@ -6,13 +6,12 @@
 // @author       cuzi
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      10
+// @version      10.1
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.registerMenuCommand
-// @grant        unsafeWindow
 // @connect      genius.com
 // @include      https://www.youtube.com/*
 // @include      https://music.youtube.com/*
@@ -35,11 +34,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, unsafeWindow, geniusLyrics */ // eslint-disable-line no-unused-vars
+/* global GM, genius, geniusLyrics */ // eslint-disable-line no-unused-vars
 
 'use strict'
 
-var genius
+let genius
 const SCRIPT_NAME = 'Youtube Genius Lyrics'
 const musicKeywords = [
   'music', 'musik', 'album', 'single',
@@ -56,14 +55,13 @@ const musicKeywords = [
 ]
 const musicDescriptors = [
   'Music video',
+  'Music Group',
   'Composer',
   'Lyricist',
   'full track',
   'vevo.ly',
   'Provided to YouTube by ',
   'Columbia Records',
-  'Universal Music Group',
-  'Warner Music Group',
   'Sony Music'
 ]
 
@@ -210,7 +208,7 @@ function hideLyrics () {
   addLyricsButton()
 }
 
-var checkFullscreenIV
+let checkFullscreenIV
 function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
@@ -242,7 +240,8 @@ function addLyricsButton () {
   }, 1000)
 }
 
-var lastVideoId = null
+let lastVideoId = null
+let lastForceVideoId = null
 function addLyrics (force, beLessSpecific) {
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
   if (!h1 || !document.querySelector('ytd-watch-flexy div#primary video')) {
@@ -251,6 +250,7 @@ function addLyrics (force, beLessSpecific) {
     return
   }
   let isMusic = false
+
   const videoTitle = h1.textContent.toLowerCase()
   if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
     isMusic = true
@@ -260,13 +260,23 @@ function addLyrics (force, beLessSpecific) {
   }
   let videoDetails
   try {
-    videoDetails = JSON.parse(unsafeWindow.document.querySelector('ytd-app').__data.data.player.args.player_response).videoDetails
+    videoDetails = document.querySelector('ytd-app').__data.data.player.args.raw_player_response.videoDetails
   } catch (e) {
+    console.log(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
+    console.log(e)
     videoDetails = { keywords: [], shortDescription: '' }
+    if (document.getElementById('meta')) {
+      videoDetails.shortDescription = document.getElementById('meta').textContent
+    }
+    const m = document.location.href.match(/v=(\w+)&?/)
+    if (m && m[1]) {
+      videoDetails.videoId = m[1]
+    }
   }
   if (!videoDetails.keywords) {
     videoDetails.keywords = []
   }
+
   if ('videoId' in videoDetails) {
     if (lastVideoId === videoDetails.videoId + genius.option.themeKey && document.getElementById('lyricscontainer')) {
       // Same video id and same theme and lyrics are showing -> stop here
@@ -277,26 +287,37 @@ function addLyrics (force, beLessSpecific) {
   } else {
     lastVideoId = null
   }
-  const keywords = videoDetails.keywords.join('').toLowerCase()
-  for (let i = 0; i < musicKeywords.length; i++) {
-    if (keywords.indexOf(musicKeywords[i]) !== -1) {
-      isMusic = true
-      break
-    }
+  if (force) {
+    isMusic = true
+    lastForceVideoId = lastVideoId
   }
-  for (let i = 0; i < musicDescriptors.length; i++) {
-    if (videoDetails.shortDescription.indexOf(musicDescriptors[i]) !== -1) {
-      isMusic = true
-      break
-    }
-  }
+
   if (!isMusic) {
+    const keywords = videoDetails.keywords.join('').toLowerCase()
+    for (let i = 0; i < musicKeywords.length; i++) {
+      if (keywords.indexOf(musicKeywords[i].toLowerCase()) !== -1) {
+        isMusic = true
+        break
+      }
+    }
+    videoDetails.shortDescription = videoDetails.shortDescription.toLowerCase()
+    for (let i = 0; i < musicDescriptors.length; i++) {
+      if (videoDetails.shortDescription.indexOf(musicDescriptors[i].toLowerCase()) !== -1) {
+        isMusic = true
+        break
+      }
+    }
+  }
+
+  if (!isMusic && (lastForceVideoId == null || lastForceVideoId !== lastVideoId)) {
     hideLyrics()
     return
   }
   let songArtists
   let songTitle = videoTitle.replace(/\(.+?\)/, '')
   songTitle = songTitle.replace(/\[.+?\]/, '')
+
+  songTitle = songTitle.replace(/official\s*audio/, '')
   songTitle = songTitle.replace(/official\s*music\s*video/, '')
   songTitle = songTitle.replace(/official\s*video/, '')
   songTitle = songTitle.replace(/music\s*video/, '')

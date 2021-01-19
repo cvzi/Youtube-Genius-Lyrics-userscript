@@ -9,7 +9,7 @@ or
 General information about userscripts and how to use them can be found at [openuserjs.org/about/Userscript-Beginners-HOWTO](https://openuserjs.org/about/Userscript-Beginners-HOWTO).
 
 [**Click here to install**](https://openuserjs.org/install/cuzi/Youtube_Genius_Lyrics.user.js)  
-Tested with Firefox/**Greasemonkey** and Chrome/**Tampermonkey**.
+Tested with Firefox/**Tampermonkey** and Chrome/**Tampermonkey**.
 
 Similar scripts:
 *   [Youtube Music Genius Lyrics](https://github.com/cvzi/Youtube-Music-Genius-Lyrics-userscript)

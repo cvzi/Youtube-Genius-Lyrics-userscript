@@ -6,7 +6,7 @@
 // @author       cuzi
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      10.1
+// @version      10.2
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -260,9 +260,14 @@ function addLyrics (force, beLessSpecific) {
   }
   let videoDetails
   try {
-    videoDetails = document.querySelector('ytd-app').__data.data.player.args.raw_player_response.videoDetails
+    const ytdAppData = document.querySelector('ytd-app').__data.data
+    if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
+      videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
+    } else {
+      videoDetails = ytdAppData.playerResponse.videoDetails
+    }
   } catch (e) {
-    console.log(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
+    console.warn(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
     console.log(e)
     videoDetails = { keywords: [], shortDescription: '' }
     if (document.getElementById('meta')) {
@@ -368,23 +373,28 @@ function addLyrics (force, beLessSpecific) {
   const songArtistsArr = songArtists.split(',').map(s => s.trim())
   songTitle = songTitle.join(' - ').trim()
 
-  songTitle = songTitle.replace('"', '').replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace('|', '')
-  songTitle = songTitle.replace(/\W+$/, '')
-  songTitle = songTitle.replace(/^\W+/, '')
-  songTitle = songTitle.trim()
-
-  let feat = songTitle.indexOf(' feat')
-  if (feat !== -1) {
-    songTitle = songTitle.substring(0, feat).trim()
-  }
-  feat = songTitle.indexOf(' ft')
-  if (feat !== -1) {
-    songTitle = songTitle.substring(0, feat).trim()
-  }
+  songTitle = genius.f.cleanUpSongTitle(songTitle)
 
   const musicIsPlaying = document.querySelector('.ytp-play-button.ytp-button').title.indexOf('Pause') !== -1
   genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
 }
+
+let lastPos = null
+function updateAutoScroll () {
+  let pos = null
+  try {
+    const video = document.querySelector('video')
+    pos = video.currentTime / video.duration
+  } catch (e) {
+    // Could not parse current song position
+    pos = null
+  }
+  if (pos != null && !Number.isNaN(pos) && lastPos !== pos) {
+    genius.f.scrollLyrics(pos)
+    lastPos = pos
+  }
+}
+window.setInterval(updateAutoScroll, 7000)
 
 function showSearchField (query) {
   const b = getCleanLyricsContainer()
@@ -402,6 +412,16 @@ function showSearchField (query) {
   const span = b.appendChild(document.createElement('span'))
   span.style = 'cursor:pointer'
   span.appendChild(document.createTextNode(' \uD83D\uDD0D'))
+
+  // Hide button
+  const hideButton = b.appendChild(document.createElement('span'))
+  hideButton.style = 'cursor:pointer;padding-left: 10px;color: black;font-size: larger;vertical-align: top;'
+  hideButton.title = 'Hide'
+  hideButton.appendChild(document.createTextNode('\uD83C\uDD87'))
+  hideButton.addEventListener('click', function hideButtonClick (ev) {
+    ev.preventDefault()
+    hideLyrics()
+  })
 
   if (query) {
     input.value = query
@@ -593,6 +613,11 @@ function newAppHint (status) {
   if (document.location.pathname === '/robots.txt') {
     return
   }
+  if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
+    // Other script already running
+    return GM.setValue('newapphint', -1)
+  }
+
   if (status % 10 === 0) {
     document.head.appendChild(document.createElement('style')).innerHTML = `
     #newapphint785 {
@@ -686,7 +711,7 @@ function newAppHint (status) {
 
 if (document.location.hostname.startsWith('music')) {
   GM.getValue('newapphint', 0).then(function (status) {
-    window.setTimeout(() => newAppHint(status), 3000)
+    window.setTimeout(() => newAppHint(status), 5000)
   })
 } else {
   genius = geniusLyrics({

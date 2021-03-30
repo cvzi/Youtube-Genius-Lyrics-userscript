@@ -11,11 +11,14 @@ General information about userscripts and how to use them can be found at [openu
 [**Click here to install**](https://openuserjs.org/install/cuzi/Youtube_Genius_Lyrics.user.js)  
 Tested with Firefox/**Tampermonkey** and Chrome/**Tampermonkey**.
 
-Similar scripts:
+### Contributors:
+[![Contributors](https://contrib.rocks/image?repo=cvzi/Youtube-Genius-Lyrics-userscript)](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/graphs/contributors)
+
+### Similar scripts:
 *   [Youtube Music Genius Lyrics](https://github.com/cvzi/Youtube-Music-Genius-Lyrics-userscript)
 *   [Spotify Genius Lyrics](https://github.com/cvzi/Spotify-Genius-Lyrics-userscript)
 
-Screenshots:
+### Screenshots:
 - Default theme ![Screenshot of youtube music video with lyrics](screenshot.png)
 - Dark (Spotify) theme ![Screenshot of youtube music video with lyrics (dark)](screenshot-dark(spotify).png)
 

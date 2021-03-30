@@ -148,7 +148,8 @@ function setFrameDimensions (container, iframe) {
   const height = iframe.style.height = window.innerHeight - bar.clientHeight - document.getElementById('masthead-container').clientHeight + 'px'
 
   if (genius.option.themeKey === 'spotify') {
-    iframe.style.backgroundColor = 'black'
+    iframe.style.backgroundColor = '#181818'
+	bar.style.backgroundColor = '#181818'
   } else {
     iframe.style.backgroundColor = ''
   }

@@ -149,7 +149,7 @@ function setFrameDimensions (container, iframe) {
 
   if (genius.option.themeKey === 'spotify') {
     iframe.style.backgroundColor = '#181818'
-	bar.style.backgroundColor = '#181818'
+    bar.style.backgroundColor = '#181818'
   } else {
     iframe.style.backgroundColor = ''
   }

@@ -15,8 +15,9 @@ Similar scripts:
 *   [Youtube Music Genius Lyrics](https://github.com/cvzi/Youtube-Music-Genius-Lyrics-userscript)
 *   [Spotify Genius Lyrics](https://github.com/cvzi/Spotify-Genius-Lyrics-userscript)
 
-Screenshot:
-![Screenshot of youtube music video with lyrics](screenshot.png)
+Screenshots:
+- Default theme ![Screenshot of youtube music video with lyrics](screenshot.png)
+- Dark (Spotify) theme ![Screenshot of youtube music video with lyrics (dark)](screenshot-dark(spotify).png)
 
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)  ![standardjs](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/workflows/standardjs/badge.svg)

@@ -62,7 +62,13 @@ const musicDescriptors = [
   'vevo.ly',
   'Provided to YouTube by ',
   'Columbia Records',
-  'Sony Music'
+  'Sony Music',
+  'track produced by',
+  'song produced by',
+  'new ep',
+  'new album',
+  'new track',
+  '.lnk.to/'
 ]
 
 function addCss () {

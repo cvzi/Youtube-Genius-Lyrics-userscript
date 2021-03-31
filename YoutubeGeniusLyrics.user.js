@@ -6,7 +6,7 @@
 // @author       cuzi
 // @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      10.4
+// @version      10.5
 // @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
@@ -124,7 +124,7 @@ function addCss () {
 
 function calcContainerWidthTop () {
   let w
-  const upnext = document.getElementById('upnext')
+  const upnext = document.querySelector('#secondary #secondary-inner') || document.getElementById('upnext')
   const playlist = document.querySelector('ytd-playlist-panel-renderer#playlist')
   const video = document.querySelector('ytd-watch-flexy div#primary video')
 

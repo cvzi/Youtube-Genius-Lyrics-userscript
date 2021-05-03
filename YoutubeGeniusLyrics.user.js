@@ -1,20 +1,27 @@
 // ==UserScript==
-// @name         Youtube Genius Lyrics
-// @description  Show lyrics/songtexts from genius.com on Youtube next to music videos
-// @license      GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
-// @copyright    2020, cuzi (https://github.com/cvzi)
-// @author       cuzi
-// @supportURL   https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @updateURL    https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version      10.5
-// @require      https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
-// @grant        GM.xmlHttpRequest
-// @grant        GM.setValue
-// @grant        GM.getValue
-// @grant        GM.registerMenuCommand
-// @connect      genius.com
-// @include      https://www.youtube.com/*
-// @include      https://music.youtube.com/*
+// @name            Youtube Genius Lyrics
+// @description     Shows lyrics/songtexts from genius.com on Youtube next to music videos
+// @description:es  Mostra la letra de genius.com de las canciones en Youtube junto a los vídeos musicales
+// @description:de  Zeigt den Songtext von genius.com neben Musikvideos auf Youtube
+// @description:fr  Présente les paroles des chansons de genius.com sur Youtube à côté des vidéos de musique.
+// @description:pl  Pokazuje teksty piosenek z genius.com na Youtube obok teledysków
+// @description:pt  Mostra letras de canções de genius.com no Youtube ao lado de vídeos de música
+// @description:it  Mostra i testi delle canzoni di genius.com su Youtube accanto ai video musicali
+// @description:ja  Youtube（ユーチューブ）では、ミュージックビデオの横に genius.com の歌詞が表示されます
+// @license         GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
+// @copyright       2020, cuzi (https://github.com/cvzi)
+// @author          cuzi
+// @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
+// @updateURL       https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
+// @version         10.5
+// @require         https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
+// @grant           GM.xmlHttpRequest
+// @grant           GM.setValue
+// @grant           GM.getValue
+// @grant           GM.registerMenuCommand
+// @connect         genius.com
+// @include         https://www.youtube.com/*
+// @include         https://music.youtube.com/*
 // ==/UserScript==
 
 /*

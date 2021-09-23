@@ -343,6 +343,7 @@ function addLyrics (force, beLessSpecific) {
   songTitle = songTitle.replace(/video/, '')
   songTitle = songTitle.replace(/music/, '')
   songTitle = songTitle.replace(/exclusive\s*-?/, '')
+  songTitle = songTitle.replace(/-\s*-/, ' - ')
   songTitle = songTitle.trim()
 
   // Pattern: Artist  - Song title

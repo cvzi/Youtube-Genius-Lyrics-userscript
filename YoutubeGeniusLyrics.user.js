@@ -13,7 +13,7 @@
 // @author          cuzi
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @updateURL       https://openuserjs.org/meta/cuzi/Youtube_Genius_Lyrics.meta.js
-// @version         10.6.1
+// @version         10.6.2
 // @require         https://openuserjs.org/src/libs/cuzi/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -609,7 +609,7 @@ function createSpinner (spinnerHolder) {
 }
 
 function main () {
-  if (document.querySelector('#container .title') && document.querySelector('#container .title').textContent) {
+  if (document.querySelector('ytd-watch-flexy #container .title') && document.querySelector('ytd-watch-flexy #container .title').textContent) {
     if (genius.option.autoShow) {
       addLyrics()
     } else {

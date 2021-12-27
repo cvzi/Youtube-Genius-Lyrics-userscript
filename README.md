@@ -8,7 +8,7 @@ or
 
 General information about userscripts and how to use them can be found at [openuserjs.org/about/Userscript-Beginners-HOWTO](https://openuserjs.org/about/Userscript-Beginners-HOWTO).
 
-[**Click here to install**](https://openuserjs.org/install/cuzi/Youtube_Genius_Lyrics.user.js)  
+[**Click here to install**](https://greasyfork.org/scripts/386259-youtube-genius-lyrics/code/Youtube%20Genius%20Lyrics.user.js)  
 Tested with Firefox/**Tampermonkey** and Chrome/**Tampermonkey**.
 
 ### Contributors:

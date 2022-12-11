@@ -11,6 +11,7 @@
 // @license         GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @copyright       2020, cuzi (https://github.com/cvzi)
 // @author          cuzi
+// @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @version         10.6.4
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
@@ -85,7 +86,6 @@ function addCss () {
   }
   #lyricscontainer {
     position:fixed;
-    right:0px;
     margin:0px;
     padding:0px;
     background:white;
@@ -185,8 +185,17 @@ function resize () {
 
   const [w, top] = calcContainerWidthTop()
 
-  container.style.top = top + 'px'
-  container.style.width = w + 'px'
+  if (isTheatherView) {
+    container.style.top = '0px'
+    container.style.width = 0.3 * document.querySelector('#columns').clientWidth + 'px'
+    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = '50%'
+    document.querySelector('#movie_player .ytp-right-controls').style.float = 'right'
+  } else {
+    container.style.top = top + 'px'
+    container.style.width = w + 'px'
+    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = ''
+    document.querySelector('#movie_player .ytp-right-controls').style.float = ''
+  }
 
   if (iframe) {
     setFrameDimensions(container, iframe)
@@ -198,19 +207,45 @@ function getCleanLyricsContainer () {
 
   const [w, top] = calcContainerWidthTop()
 
-  if (!document.getElementById('lyricscontainer')) {
-    container = document.createElement('div')
-    container.id = 'lyricscontainer'
-    document.body.appendChild(container)
-  } else {
-    container = document.getElementById('lyricscontainer')
-    container.innerHTML = ''
-  }
-  container.style = ''
-  container.style.top = top + 'px'
-  container.style.width = w + 'px'
+  if (isTheatherView) {
+    if (!document.getElementById('lyricscontainer')) {
+      container = document.createElement('div')
+      container.id = 'lyricscontainer'
+      document.body.appendChild(container)
+    } else {
+      container = document.getElementById('lyricscontainer')
+      container.innerHTML = ''
+    }
+    container.style = ''
+    container.style.top = top + 'px'
+    container.style.width = parseInt(0.3 * document.querySelector('#columns').clientWidth) + 'px'
+    container.style.right = '0px'
+    container.style.position = 'fixed'
 
-  return document.getElementById('lyricscontainer')
+    document.querySelector('#columns').appendChild(container)
+
+    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = '50%'
+    document.querySelector('#movie_player .ytp-right-controls').style.float = 'right'
+
+    return document.getElementById('lyricscontainer')
+  } else {
+    if (!document.getElementById('lyricscontainer')) {
+      container = document.createElement('div')
+      container.id = 'lyricscontainer'
+      document.body.appendChild(container)
+    } else {
+      container = document.getElementById('lyricscontainer')
+      container.innerHTML = ''
+    }
+    container.style = ''
+    container.style.top = top + 'px'
+    container.style.width = w + 'px'
+    container.style.right = '0px'
+
+    document.body.appendChild(container)
+
+    return document.getElementById('lyricscontainer')
+  }
 }
 
 function hideLyrics () {
@@ -255,13 +290,18 @@ function addLyricsButton () {
 
 let lastVideoId = null
 let lastForceVideoId = null
+let isNormalView = false
+let isTheatherView = false
 function addLyrics (force, beLessSpecific) {
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
-  if (!h1 || !document.querySelector('ytd-watch-flexy div#primary video')) {
+  isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
+  isTheatherView = !!document.querySelector('ytd-watch-flexy div#player-theater-container video')
+  if (!h1 || (!isNormalView && !isTheatherView)) {
     // Not a video page or video page not visible
     hideLyrics()
     return
   }
+
   let isMusic = false
 
   const videoTitle = h1.textContent.toLowerCase()
@@ -728,22 +768,22 @@ if (document.location.hostname.startsWith('music')) {
   })
 } else {
   genius = geniusLyrics({
-    GM: GM,
+    GM,
     scriptName: SCRIPT_NAME,
     scriptIssuesURL: 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
     scriptIssuesTitle: 'Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
     domain: 'https://www.youtube.com/',
     emptyURL: 'https://www.youtube.com/robots.txt',
-    main: main,
-    addCss: addCss,
-    listSongs: listSongs,
-    showSearchField: showSearchField,
-    addLyrics: addLyrics,
-    hideLyrics: hideLyrics,
-    getCleanLyricsContainer: getCleanLyricsContainer,
-    setFrameDimensions: setFrameDimensions,
-    onResize: onResize,
-    createSpinner: createSpinner
+    main,
+    addCss,
+    listSongs,
+    showSearchField,
+    addLyrics,
+    hideLyrics,
+    getCleanLyricsContainer,
+    setFrameDimensions,
+    onResize,
+    createSpinner
   })
   GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
   window.setInterval(updateAutoScroll, 7000)

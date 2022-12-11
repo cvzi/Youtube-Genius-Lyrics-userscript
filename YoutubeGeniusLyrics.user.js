@@ -330,7 +330,7 @@ function hideLyrics () {
   addLyricsButton()
 }
 
-function onFullScreenChanged() {
+function onFullScreenChanged () {
   if (document.getElementById('showlyricsbutton')) {
     document.getElementById('showlyricsbutton').style.display = document.fullscreenElement ? 'none' : 'block'
   }
@@ -381,10 +381,10 @@ function addLyrics (force, beLessSpecific) {
 
   let isMusic = false
 
-  let ytdAppData = null;
-  try{
+  let ytdAppData = null
+  try {
     ytdAppData = document.querySelector('ytd-app').__data.data
-  }catch(e){}
+  } catch (e) {}
   const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
   if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
     isMusic = true
@@ -394,7 +394,7 @@ function addLyrics (force, beLessSpecific) {
   }
   let videoDetails
   try {
-    if(!ytdAppData) document.querySelector('ytd-app').__data.data;
+    if (!ytdAppData) ytdAppData = document.querySelector('ytd-app').__data.data
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
       videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
     } else {
@@ -632,8 +632,8 @@ function listSongs (hits, container, query) {
   const artists = genius.current.artists
 
   const onclick = function onclick (event) {
-    let element = event.target
-    if(element.nodeName==='LI'){
+    const element = event.target
+    if (element.nodeName==='LI') {
       genius.f.rememberLyricsSelection(title, artists, element.dataset.hit)
       genius.f.showLyrics(JSON.parse(element.dataset.hit), searchresultsLengths)
     }
@@ -649,15 +649,15 @@ function listSongs (hits, container, query) {
       <div class="onout"><span>📄</span></div>
     </div>
     <div style="float:left; margin-left:5px">${hit.result.primary_artist.name} • ${hit.result.title_with_featured} <br><span style="font-size:0.7em">👁 ${genius.f.metricPrefix(hit.result.stats.pageviews, 1)} ${hit.result.lyrics_state}</span></div>
-    <div style="clear:left;"></div>`;
-    li.innerHTML = trackhtml;
+    <div style="clear:left;"></div>`
+    li.innerHTML = trackhtml
     li.dataset.hit = JSON.stringify(hit)
-    return li;
+    return li
   })
-  if(typeof ol.append === 'function'){
+  if (typeof ol.append === 'function') {
     ol.append(...liArr)
-  }else{
-    for(const li of liArr){
+  } else {
+    for (const li of liArr) {
       ol.appendChild(li)
     }
   }

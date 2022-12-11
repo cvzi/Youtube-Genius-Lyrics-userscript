@@ -145,7 +145,7 @@ function calcContainerWidthTop () {
   } else if (playlist && playlist.getBoundingClientRect().left > 0) {
     w = window.innerWidth - playlist.getBoundingClientRect().left - 5
   } else if (video) {
-    w = window.innerWidth - 1.02 * video.getClientRects()[0].right
+    w = window.innerWidth - 1.02 * video.getBoundingClientRect().right
   } else {
     w = window.innerWidth * 0.45
   }

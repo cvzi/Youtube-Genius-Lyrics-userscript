@@ -633,7 +633,7 @@ function listSongs (hits, container, query) {
 
   const onclick = function onclick (event) {
     const element = event.target
-    if (element.nodeName==='LI') {
+    if (element.nodeName === 'LI') {
       genius.f.rememberLyricsSelection(title, artists, element.dataset.hit)
       genius.f.showLyrics(JSON.parse(element.dataset.hit), searchresultsLengths)
     }

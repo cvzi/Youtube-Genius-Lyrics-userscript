@@ -13,15 +13,15 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.6.5
+// @version         10.6.6
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
 // @grant           GM.getValue
 // @grant           GM.registerMenuCommand
 // @connect         genius.com
-// @include         https://www.youtube.com/*
-// @include         https://music.youtube.com/*
+// @match           https://www.youtube.com/*
+// @match           https://music.youtube.com/*
 // ==/UserScript==
 
 /*
@@ -131,6 +131,79 @@ function addCss () {
   .lorem {padding:10px 0px 0px 15px; font-size: 1.4rem;line-height: 2.2rem;letter-spacing: 0.3rem;}
   .lorem .white {background:white;color:white}
   .lorem .gray {background:rgb(204, 204, 204);color:rgb(204, 204, 204)}
+  #showlyricsbutton {
+    position:absolute;
+    right:0px;
+    color:#ffff64;
+    cursor:pointer;
+    background:#000a;
+    border-radius:50%;
+    margin:auto;
+    padding:0px 1px;
+    text-align:center;
+    font-size:15px;
+    line-height:14px;
+    z-index:3000;
+  }
+  .youtube-genius-lyrics-container{
+    border: 1px solid black;
+    border-radius: 3px;
+    padding: 5px;
+    padding-right: 15px;
+  }
+  span.youtube-genius-lyrics-container-span{
+    cursor:pointer;
+  }
+  span.youtube-genius-lyrics-container-hide-button{
+    cursor:pointer;
+    padding-left: 10px;
+    color: black;
+    font-size: larger;
+    vertical-align: top;
+  }
+  span.youtube-genius-lyrics-second-line-separator{
+    padding:0px 3px;
+  }
+  ol.youtube-genius-lyrics-tracklist{
+    listStyle: none;
+  }
+  li.youtube-genius-lyrics-result{
+    cursor: pointer;
+    transition: background-color 0.2s;
+    padding: 3px;
+    margin: 2px;
+    border-radius: 3px;
+  }
+
+  li.youtube-genius-lyrics-result div.onhover{
+    display:none;
+    margin-top:-0.25em;
+  }
+  li.youtube-genius-lyrics-result div.onout{
+    display:block;
+  }
+  li.youtube-genius-lyrics-result{
+    background-color:rgb(255, 255, 255);
+  }
+
+  li.youtube-genius-lyrics-result:hover div.onhover{
+    display:block;
+  }
+  li.youtube-genius-lyrics-result:hover div.onout{
+    display:none;
+  }
+  li.youtube-genius-lyrics-result:hover{
+    background-color:rgb(200, 200, 200);
+  }
+  li.youtube-genius-lyrics-result *{
+    pointer-events:none;
+  }
+  li.youtube-genius-lyrics-result div.onhover span{
+    color:black;font-size:2.0em;
+  }
+  li.youtube-genius-lyrics-result div.onout span{
+    font-size:1.5em;
+  }
   `
 }
 
@@ -173,6 +246,7 @@ function onResize () {
   window.setTimeout(function () {
     genius.option.resizeOnNextRun = true
   }, 200)
+  window.setTimeout(main, 2000)
 }
 
 function resize () {
@@ -256,7 +330,12 @@ function hideLyrics () {
   addLyricsButton()
 }
 
-let checkFullscreenIV
+function onFullScreenChanged() {
+  if (document.getElementById('showlyricsbutton')) {
+    document.getElementById('showlyricsbutton').style.display = document.fullscreenElement ? 'none' : 'block'
+  }
+}
+
 function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
@@ -264,13 +343,14 @@ function addLyricsButton () {
   const top = calcContainerWidthTop()[1]
   const b = document.createElement('div')
   b.setAttribute('id', 'showlyricsbutton')
-  b.setAttribute('style', 'position:absolute;top:' + (top + 2) + 'px;right:0px;color:#ffff64;cursor:pointer;background:#000a;border-radius:50%;margin:auto;padding:0px 1px;text-align:center;font-size:15px;line-height:14px;z-index:3000')
+  b.setAttribute('style', 'top:' + (top + 2) + 'px;')
   b.setAttribute('title', 'Load lyrics from genius.com')
   b.appendChild(document.createTextNode('🅖'))
   b.addEventListener('click', function onShowLyricsButtonClick () {
     genius.option.autoShow = true // Temporarily enable showing lyrics automatically on song change
-    window.clearInterval(genius.iv.main)
-    genius.iv.main = window.setInterval(main, 2000)
+    window.setTimeout(main, 2000)
+    document.removeEventListener('yt-navigate-finish', main, false)
+    document.addEventListener('yt-navigate-finish', main, false)
     b.remove()
     addLyrics(true)
   })
@@ -280,12 +360,9 @@ function addLyricsButton () {
     b.innerHTML = 'G'
   }
 
-  window.clearInterval(checkFullscreenIV)
-  checkFullscreenIV = window.setInterval(function () {
-    if (document.getElementById('showlyricsbutton')) {
-      document.getElementById('showlyricsbutton').style.display = document.fullscreenElement ? 'none' : 'block'
-    }
-  }, 1000)
+  document.removeEventListener('fullscreenchange', onFullScreenChanged, false)
+  document.addEventListener('fullscreenchange', onFullScreenChanged, false)
+  window.setTimeout(onFullScreenChanged, 1000)
 }
 
 let lastVideoId = null
@@ -304,7 +381,11 @@ function addLyrics (force, beLessSpecific) {
 
   let isMusic = false
 
-  const videoTitle = h1.textContent.toLowerCase()
+  let ytdAppData = null;
+  try{
+    ytdAppData = document.querySelector('ytd-app').__data.data
+  }catch(e){}
+  const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
   if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
     isMusic = true
   }
@@ -313,7 +394,7 @@ function addLyrics (force, beLessSpecific) {
   }
   let videoDetails
   try {
-    const ytdAppData = document.querySelector('ytd-app').__data.data
+    if(!ytdAppData) document.querySelector('ytd-app').__data.data;
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
       videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
     } else {
@@ -451,26 +532,22 @@ function updateAutoScroll () {
 
 function showSearchField (query) {
   const b = getCleanLyricsContainer()
-
-  b.style.border = '1px solid black'
-  b.style.borderRadius = '3px'
-  b.style.padding = '5px'
+  b.classList.add('youtube-genius-lyrics-container')
 
   b.appendChild(document.createTextNode('Search genius.com: '))
-  b.style.paddingRight = '15px'
   const input = b.appendChild(document.createElement('input'))
   input.className = 'SearchInputBox__input'
   input.placeholder = 'Search genius.com...'
 
   const span = b.appendChild(document.createElement('span'))
-  span.style = 'cursor:pointer'
-  span.appendChild(document.createTextNode(' \uD83D\uDD0D'))
+  span.classList.add('youtube-genius-lyrics-container-span')
+  span.textContent = ' \uD83D\uDD0D'
 
   // Hide button
   const hideButton = b.appendChild(document.createElement('span'))
-  hideButton.style = 'cursor:pointer;padding-left: 10px;color: black;font-size: larger;vertical-align: top;'
+  hideButton.classList.add('youtube-genius-lyrics-container-hide-button')
   hideButton.title = 'Hide'
-  hideButton.appendChild(document.createTextNode('\uD83C\uDD87'))
+  hideButton.textContent = '\uD83C\uDD87'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
     ev.preventDefault()
     hideLyrics()
@@ -512,7 +589,7 @@ function listSongs (hits, container, query) {
   // Back to search button
   const backToSearchButton = document.createElement('a')
   backToSearchButton.href = '#'
-  backToSearchButton.appendChild(document.createTextNode('Back to search'))
+  backToSearchButton.textContent = 'Back to search'
   backToSearchButton.addEventListener('click', function backToSearchButtonClick (ev) {
     ev.preventDefault()
     if (query) {
@@ -525,22 +602,20 @@ function listSongs (hits, container, query) {
   })
 
   const separator = document.createElement('span')
-  separator.setAttribute('class', 'second-line-separator')
-  separator.setAttribute('style', 'padding:0px 3px')
-  separator.appendChild(document.createTextNode('•'))
+  separator.classList.add('second-line-separator')
+  separator.classList.add('youtube-genius-lyrics-second-line-separator')
+  separator.textContent = '•'
 
   // Hide button
   const hideButton = document.createElement('a')
   hideButton.href = '#'
-  hideButton.appendChild(document.createTextNode('Hide'))
+  hideButton.textContent = 'Hide'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
     ev.preventDefault()
     hideLyrics()
   })
 
   // List search results
-  const trackhtml = '<div style="float:left;"><div class="onhover" style="margin-top:-0.25em;display:none"><span style="color:black;font-size:2.0em">🅖</span></div><div class="onout"><span style="font-size:1.5em">📄</span></div></div>' +
-  '<div style="float:left; margin-left:5px">$artist • $title <br><span style="font-size:0.7em">👁 $stats.pageviews $lyrics_state</span></div><div style="clear:left;"></div>'
   container.innerHTML = '<ol class="tracklist" style="width:99%; font-size:1.15em"></ol>'
 
   container.style.border = '1px solid black'
@@ -551,40 +626,41 @@ function listSongs (hits, container, query) {
   container.insertBefore(backToSearchButton, container.firstChild)
 
   const ol = container.querySelector('ol.tracklist')
-  ol.style.listStyle = 'none'
+  ol.classList.add('youtube-genius-lyrics-tracklist')
   const searchresultsLengths = hits.length
   const title = genius.current.title
   const artists = genius.current.artists
-  const onclick = function onclick () {
-    genius.f.rememberLyricsSelection(title, artists, this.dataset.hit)
-    genius.f.showLyrics(JSON.parse(this.dataset.hit), searchresultsLengths)
-  }
-  const mouseover = function onmouseover () {
-    this.querySelector('.onhover').style.display = 'block'
-    this.querySelector('.onout').style.display = 'none'
-    this.style.backgroundColor = 'rgb(200, 200, 200)'
-  }
-  const mouseout = function onmouseout () {
-    this.querySelector('.onhover').style.display = 'none'
-    this.querySelector('.onout').style.display = 'block'
-    this.style.backgroundColor = 'rgb(255, 255, 255)'
-  }
 
-  hits.forEach(function forEachHit (hit) {
+  const onclick = function onclick (event) {
+    let element = event.target
+    if(element.nodeName==='LI'){
+      genius.f.rememberLyricsSelection(title, artists, element.dataset.hit)
+      genius.f.showLyrics(JSON.parse(element.dataset.hit), searchresultsLengths)
+    }
+  }
+  ol.addEventListener('click', onclick, true)
+
+  const liArr = hits.map(function hitsMap (hit) {
     const li = document.createElement('li')
-    li.style.cursor = 'pointer'
-    li.style.transition = 'background-color 0.2s'
-    li.style.padding = '3px'
-    li.style.margin = '2px'
-    li.style.borderRadius = '3px'
-    li.innerHTML = trackhtml.replace(/\$title/g, hit.result.title_with_featured).replace(/\$artist/g, hit.result.primary_artist.name).replace(/\$lyrics_state/g, hit.result.lyrics_state).replace(/\$stats\.pageviews/g, genius.f.metricPrefix(hit.result.stats.pageviews, 1))
+    li.classList.add('youtube-genius-lyrics-result')
+    const trackhtml = `
+    <div style="float:left;">
+      <div class="onhover"><span>🅖</span></div>
+      <div class="onout"><span>📄</span></div>
+    </div>
+    <div style="float:left; margin-left:5px">${hit.result.primary_artist.name} • ${hit.result.title_with_featured} <br><span style="font-size:0.7em">👁 ${genius.f.metricPrefix(hit.result.stats.pageviews, 1)} ${hit.result.lyrics_state}</span></div>
+    <div style="clear:left;"></div>`;
+    li.innerHTML = trackhtml;
     li.dataset.hit = JSON.stringify(hit)
-
-    li.addEventListener('click', onclick)
-    li.addEventListener('mouseover', mouseover)
-    li.addEventListener('mouseout', mouseout)
-    ol.appendChild(li)
+    return li;
   })
+  if(typeof ol.append === 'function'){
+    ol.append(...liArr)
+  }else{
+    for(const li of liArr){
+      ol.appendChild(li)
+    }
+  }
 }
 
 function loremIpsum () {
@@ -638,11 +714,10 @@ function createSpinner (spinnerHolder) {
       if (loadingSpinner) {
         loadingSpinner.style.marginLeft = (rect.width / 2) + 'px'
       }
-    } else {
-      window.clearInterval(resizeSpinnerIV)
+      window.setTimeout(resizeSpinner, 1000)
     }
   }
-  const resizeSpinnerIV = window.setInterval(resizeSpinner, 1000)
+  window.setTimeout(resizeSpinner, 1000)
 
   return spinner
 }
@@ -713,9 +788,10 @@ function newAppHint (status) {
     container.id = 'newapphint785'
     document.body.appendChild(container)
 
-    container.appendChild(document.createElement('h2')).appendChild(document.createTextNode('⚠️ Youtube Genius Lyrics 🆕'))
+    const h2 = container.appendChild(document.createElement('h2'))
+    h2.textContent = '⚠️ Youtube Genius Lyrics 🆕'
     const p = container.appendChild(document.createElement('p'))
-    p.appendChild(document.createTextNode('▶️ If you would like to see lyrics here as well, you can now install a new userscript specifically for music.youtube.com:'))
+    p.textContent = '▶️ If you would like to see lyrics here as well, you can now install a new userscript specifically for music.youtube.com:'
     p.appendChild(document.createElement('br'))
     p.appendChild(document.createElement('br'))
 
@@ -729,7 +805,7 @@ function newAppHint (status) {
 
     const aInstall = p.appendChild(document.createElement('a'))
     aInstall.href = 'https://openuserjs.org/install/cuzi/Youtube_Music_Genius_Lyrics.user.js'
-    aInstall.appendChild(document.createTextNode('💘 Click to install new script'))
+    aInstall.textContent = '💘 Click to install new script'
     aInstall.addEventListener('click', function () {
       GM.setValue('newapphint', -1).then(function () {
         aInstall.innerHTML = 'ℹ️ Please reload (F5) the page after installing'
@@ -740,7 +816,7 @@ function newAppHint (status) {
     p.appendChild(document.createElement('br'))
 
     const remindMeLater = container.appendChild(document.createElement('button'))
-    remindMeLater.appendChild(document.createTextNode('🔜 Remind me later'))
+    remindMeLater.textContent = '🔜 Remind me later'
     remindMeLater.addEventListener('click', function () {
       GM.setValue('newapphint', 1).then(() => container.remove())
     })
@@ -748,7 +824,7 @@ function newAppHint (status) {
     container.appendChild(document.createElement('br'))
 
     const doNotShowAgain = container.appendChild(document.createElement('button'))
-    doNotShowAgain.appendChild(document.createTextNode('🆗🆒 Do not show again'))
+    doNotShowAgain.textContent = '🆗🆒 Do not show again'
     doNotShowAgain.addEventListener('click', function () {
       GM.setValue('newapphint', -1).then(() => container.remove())
     })

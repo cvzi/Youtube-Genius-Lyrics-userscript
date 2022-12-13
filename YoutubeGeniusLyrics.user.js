@@ -267,11 +267,11 @@ function appendElements (target, elements) {
 }
 
 const removeElements = (typeof window.DocumentFragment.prototype.append === 'function') ? (
-  (elements) => {
+  function (elements) {
     document.createDocumentFragment().append(...elements)
   }
 ) : (
-  (elements) => {
+  function (elements) {
     for (const element of elements) {
       element.remove()
     }
@@ -351,7 +351,7 @@ function resize () {
     return
   }
 
-  const { top, width, isTheatherView } = calcContainerWidthTop()
+  const { top, width } = calcContainerWidthTop()
 
   container.style.top = `${top}px`
   container.style.width = `${width}px`
@@ -365,7 +365,7 @@ function resize () {
 function getCleanLyricsContainer () {
   let container = null
 
-  const {top, width, isTheatherView} = calcContainerWidthTop()
+  const { top, width } = calcContainerWidthTop()
 
   if (!document.getElementById('lyricscontainer')) {
     container = document.createElement('div')
@@ -382,7 +382,7 @@ function getCleanLyricsContainer () {
   container.style.width = `${width}px`
   document.body.appendChild(container)
 
-  let result = document.getElementById('lyricscontainer')
+  const result = document.getElementById('lyricscontainer')
   if (result !== container) {
     console.warn(SCRIPT_NAME + ' getCleanLyricsContainer() Could not insert the element correctly')
   }
@@ -489,8 +489,8 @@ function getMusicTitleAndAuthor (pData){
   const response = pData.response
   const engagementPanels = response.engagementPanels
   let carouselLockups = null
-  for(const ep of engagementPanels) {
-    let m = obtainDataCarouselLockups(ep)
+  for (const ep of engagementPanels) {
+    const m = obtainDataCarouselLockups(ep)
     if (m !== null) {
       carouselLockups = m
       break
@@ -512,7 +512,7 @@ function getMusicTitleAndAuthor (pData){
       try {
         title = pData.playerResponse.videoDetails.title
       } catch (e) { }
-      if (title && typeof title == 'string') {
+      if (title && typeof title === 'string') {
         a1 = simpleTextFixup(a1)
         a2 = simpleTextFixup(a2)
         title = simpleTextFixup(title)
@@ -624,7 +624,6 @@ function addLyrics (force, beLessSpecific) {
   }
 
   if (ytdDescriptionInfo === null) {
-
     const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
     if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
       isMusic = true
@@ -632,9 +631,7 @@ function addLyrics (force, beLessSpecific) {
     if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
       isMusic = true
     }
-
     songTitle = videoTitle 
-
   }
 
   if ('videoId' in videoDetails) {
@@ -687,7 +684,6 @@ function addLyrics (force, beLessSpecific) {
     songTitle = songTitle.replace(/-\s*-/, ' - ')
     songTitle = songTitle.trim()
 
-
     // Pattern: Artist  - Song title
     songTitle = songTitle.split(/\s+[-–]\s+/)
 
@@ -729,23 +725,16 @@ function addLyrics (force, beLessSpecific) {
 
     const songArtistsArr = songArtists.split(',').map(s => s.trim())
     songTitle = songTitle.join(' - ').trim()
-
     songTitle = genius.f.cleanUpSongTitle(songTitle)
-
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
-
   } else {
-
     const songArtistsArr = [ytdDescriptionInfo.singer]
     // const songArtists = ytdDescriptionInfo.singer
     songTitle = ytdDescriptionInfo.song
-
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
-  
   }
-
 }
 
 let lastPos = null
@@ -821,7 +810,8 @@ function showSearchField (query) {
     hideButton
   ])
   document.body.appendChild(b)
-  new Promise(resolve => {
+  
+  new Promise(function (resolve) {
     input.focus()
   })
 }
@@ -838,7 +828,7 @@ function getHitOfElement (li) {
 
 async function rememberLyricsSelection (title, artists, hit) {
   // in order to call "genius.f.rememberLyricsSelection(title, artists, jsonHit)", use async call to get jsonHit
-  const jsonHit = await new Promise(resolve => {
+  const jsonHit = await new Promise(function (resolve) {
     // this is not a complete async function, but it helps not to block the scripting
     resolve(JSON.stringify(hit))
   })
@@ -846,7 +836,6 @@ async function rememberLyricsSelection (title, artists, hit) {
 }
 
 function listSongs (hits, container, query) {
-
   // Back to search button
   const backToSearchButton = document.createElement('span')
   backToSearchButton.classList.add('youtube-genius-lyrics-results-container-back-btn')
@@ -878,7 +867,7 @@ function listSongs (hits, container, query) {
   const tracklistOL = document.createElement('ol')
   tracklistOL.classList.add('tracklist')
   tracklistOL.classList.add('youtube-genius-lyrics-tracklist')
-  tracklistOL.addEventListener('click', function onclick(ev) {
+  tracklistOL.addEventListener('click', function onclick (ev) {
     const element = ev.target
     if (element.nodeName === 'LI') {
       const hit = getHitOfElement(element)
@@ -1111,15 +1100,13 @@ if (document.location.hostname.startsWith('music')) {
     window.setTimeout(() => newAppHint(status), 5000)
   })
 } else {
-
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
-
   const setupMain = isRobotsTxt ? (
-    () => {
+    function setupMain () {
       // do nothing
     }
   ) : (
-    () => {
+    function setupMain () {
       window.setTimeout(main, 2000)
       document.removeEventListener('yt-navigate-finish', main, false)
       document.addEventListener('yt-navigate-finish', main, false)
@@ -1147,7 +1134,6 @@ if (document.location.hostname.startsWith('music')) {
     onResize,
     createSpinner
   })
-
   if (isRobotsTxt === false) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
     document.addEventListener('timeupdate', (ev) => {
@@ -1157,5 +1143,4 @@ if (document.location.hostname.startsWith('music')) {
     }, true)
     document.documentElement.classList.add('youtube-genius-lyrics')
   }
-
 }

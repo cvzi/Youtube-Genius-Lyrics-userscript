@@ -266,7 +266,7 @@ function appendElements (target, elements) {
   }
 }
 
-const removeElements = typeof DocumentFragment.prototype.append === 'function' ? (elements) => {
+const removeElements = (typeof window.DocumentFragment.prototype.append === 'function') ? (elements) => {
   document.createDocumentFragment().append(...elements)
 } : (elements) => {
   for (const element of elements) {
@@ -274,12 +274,12 @@ const removeElements = typeof DocumentFragment.prototype.append === 'function' ?
   }
 }
 
-function getMastheadHeight(){
+function getMastheadHeight () {
   const masthead = document.querySelector('ytd-masthead#masthead')
   return masthead.getBoundingClientRect().height
 }
 
-function calcContainerWidthTop(){
+function calcContainerWidthTop () {
 
   let w
   const upnext = document.querySelector('#secondary #secondary-inner') || document.getElementById('upnext')
@@ -300,13 +300,13 @@ function calcContainerWidthTop(){
 
   if (isTheatherView) {
     return {
-      top: top,
+      top,
       width: parseInt(0.3 * document.querySelector('#columns').clientWidth),
       isTheatherView
     }
   } else {
     return {
-      top: top,
+      top,
       width: w,
       isTheatherView
     }
@@ -347,7 +347,7 @@ function resize () {
     return
   }
 
-  const {top, width, isTheatherView} = calcContainerWidthTop()
+  const { top, width, isTheatherView } = calcContainerWidthTop()
 
   container.style.top = `${top}px`
   container.style.width = `${width}px`
@@ -430,7 +430,7 @@ function addLyricsButton () {
   if (b.clientWidth < 10) {
     b.classList.add('youtube-genius-lyrics-button-g-small')
     b.innerHTML = 'G'
-  }else{
+  } else {
     b.classList.add('youtube-genius-lyrics-button-g-normal')
   }
 
@@ -469,7 +469,7 @@ function getSimpleText (defaultMetadata) {
     return defaultMetadata.simpleText
   }
   if (defaultMetadata.runs) {
-    let texts = defaultMetadata.runs.map(entry => entry.text)
+    const texts = defaultMetadata.runs.map(entry => entry.text)
     if (texts.length === 1 && typeof texts[0] === 'string') {
       return texts[0]
     }
@@ -482,8 +482,8 @@ function simpleTextFixup (text) {
 }
 
 function getMusicTitleAndAuthor (pData){
-  let response = pData.response
-  let engagementPanels = response.engagementPanels
+  const response = pData.response
+  const engagementPanels = response.engagementPanels
   let carouselLockups = null
   for(const ep of engagementPanels) {
     let m = obtainDataCarouselLockups(ep)
@@ -494,7 +494,6 @@ function getMusicTitleAndAuthor (pData){
   }
 
   if (carouselLockups && carouselLockups.length === 1) {
-
     let a1 = null
     let a2 = null
     try {
@@ -504,19 +503,15 @@ function getMusicTitleAndAuthor (pData){
     a1 = getSimpleText(a1)
     a2 = getSimpleText(a2)
 
-    if (a1 && a2 && typeof a1 == 'string' && typeof a2 == 'string') {
-
+    if (a1 && a2 && typeof a1 === 'string' && typeof a2 === 'string') {
       let title = null
       try {
         title = pData.playerResponse.videoDetails.title
       } catch (e) { }
-
       if (title && typeof title == 'string') {
-
         a1 = simpleTextFixup(a1)
         a2 = simpleTextFixup(a2)
         title = simpleTextFixup(title)
-
         let newValue = `${a2} ${a1}`
         return {
           title: title,
@@ -524,11 +519,9 @@ function getMusicTitleAndAuthor (pData){
           song: a1,
           text: newValue
         }
-
       }
-
     }
-
+    
   }
   return null
 }

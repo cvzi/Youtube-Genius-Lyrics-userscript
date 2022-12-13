@@ -544,7 +544,6 @@ function isYoutubeVideoPlaying () {
   const videoPlayerContainer = document.querySelector('#ytd-player #movie_player')
   let video = null
   if (videoPlayerContainer) {
-
     const isPaused = videoPlayerContainer.classList.contains('paused-mode')
     if (isPaused) {
       return false
@@ -563,9 +562,7 @@ function isYoutubeVideoPlaying () {
         return true
       }
     }
-
   }
-
   if (video === null) {
     video = document.querySelector('video[src]')
   }
@@ -578,7 +575,6 @@ function isYoutubeVideoPlaying () {
       return true
     }
   }
-
 }
 function addLyrics (force, beLessSpecific) {
 
@@ -592,11 +588,9 @@ function addLyrics (force, beLessSpecific) {
   }
 
   let isMusic = false
-
   let ytdAppData = null
   let songTitle = null
   let ytdDescriptionInfo = null
-
 
   let videoDetails
   try {
@@ -741,10 +735,10 @@ function addLyrics (force, beLessSpecific) {
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
 
-  }else{
+  } else {
 
     const songArtistsArr = [ytdDescriptionInfo.singer]
-    //const songArtists = ytdDescriptionInfo.singer
+    // const songArtists = ytdDescriptionInfo.singer
     songTitle = ytdDescriptionInfo.song
 
     const musicIsPlaying = isYoutubeVideoPlaying()
@@ -755,9 +749,11 @@ function addLyrics (force, beLessSpecific) {
 }
 
 let lastPos = null
-function updateAutoScroll(video) {
+function updateAutoScroll (video) {
   let pos = null
-  if (!video) video = getYoutubeMainVideo()
+  if (!video) {
+    video = getYoutubeMainVideo()
+  }
   if (video) {
     pos = video.currentTime / video.duration
   }
@@ -801,7 +797,7 @@ function showSearchField (query) {
     }
   })
   input.addEventListener('keyup', function onSearchLyricsKeyUp (ev) {
-    if (ev.code === "Enter") {
+    if (ev.code === 'Enter') {
       ev.preventDefault()
       if (input.value) {
         genius.f.searchByQuery(input.value, b)
@@ -885,7 +881,7 @@ function listSongs (hits, container, query) {
   tracklistOL.addEventListener('click', function onclick(ev) {
     const element = ev.target
     if (element.nodeName === 'LI') {
-      let hit = getHitOfElement(element)
+      const hit = getHitOfElement(element)
       if (hit !== null) {
         genius.f.showLyrics(hit, searchresultsLengths)
         rememberLyricsSelection(title, artists, hit)
@@ -899,7 +895,6 @@ function listSongs (hits, container, query) {
   const artists = genius.current.artists
 
   // prepare results
-
   const liArr = hits.map(function hitsMap (hit) {
     const li = document.createElement('li')
     li.classList.add('youtube-genius-lyrics-result')
@@ -919,7 +914,6 @@ function listSongs (hits, container, query) {
   })
   appendElements(tracklistOL, liArr)
 
-
   // Flush DOM
   if (!container) {
     container = getCleanLyricsContainer()
@@ -928,7 +922,6 @@ function listSongs (hits, container, query) {
   }
   container.classList.add('youtube-genius-lyrics-results-container')
   document.documentElement.setAttribute('youtube-genius-lyrics-container', 'results')
-
   container.innerHTML = ''
   appendElements(container, [
     backToSearchButton,
@@ -936,7 +929,6 @@ function listSongs (hits, container, query) {
     hideButton,
     tracklistOL
   ])
-
 }
 
 function loremIpsum () {

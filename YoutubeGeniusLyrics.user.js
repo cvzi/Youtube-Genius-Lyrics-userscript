@@ -276,14 +276,12 @@ const removeElements = (typeof window.DocumentFragment.prototype.append === 'fun
     }
   }
 
-
 function getMastheadHeight () {
   const masthead = document.querySelector('ytd-masthead#masthead')
   return masthead.getBoundingClientRect().height
 }
 
 function calcContainerWidthTop () {
-
   let w
   const upnext = document.querySelector('#secondary #secondary-inner') || document.getElementById('upnext')
   const playlist = document.querySelector('ytd-playlist-panel-renderer#playlist')
@@ -299,8 +297,8 @@ function calcContainerWidthTop () {
     w = window.innerWidth * 0.45
   }
   w = Math.min(window.innerWidth * 0.75, w)
-  const top = getMastheadHeight()
 
+  const top = getMastheadHeight()
   if (isTheatherView) {
     return {
       top,
@@ -313,9 +311,7 @@ function calcContainerWidthTop () {
       width: w,
       isTheatherView
     }
-
   }
-
 }
 
 function setFrameDimensions (container, iframe, bar) {
@@ -407,7 +403,7 @@ function onFullScreenChanged () {
   }
 }
 
-async function showLyricsButtonClicked(){
+async function showLyricsButtonClicked () {
   genius.option.autoShow = true // Temporarily enable showing lyrics automatically on song change
   window.setTimeout(main, 2000)
   document.removeEventListener('yt-navigate-finish', main, false)
@@ -515,9 +511,9 @@ function getMusicTitleAndAuthor (pData){
         a1 = simpleTextFixup(a1)
         a2 = simpleTextFixup(a2)
         title = simpleTextFixup(title)
-        let newValue = `${a2} ${a1}`
+        const newValue = `${a2} ${a1}`
         return {
-          title: title,
+          title,
           singer: a2,
           song: a1,
           text: newValue
@@ -528,6 +524,7 @@ function getMusicTitleAndAuthor (pData){
   }
   return null
 }
+
 function getYoutubeMainVideo() {
   let video = document.querySelector('#ytd-player #movie_player video[src]')
   if (video !== null) {
@@ -539,6 +536,7 @@ function getYoutubeMainVideo() {
   }
   return null
 }
+
 function isYoutubeVideoPlaying () {
   const videoPlayerContainer = document.querySelector('#ytd-player #movie_player')
   let video = null
@@ -551,7 +549,7 @@ function isYoutubeVideoPlaying () {
     if (isPlaying) {
       return true
     }
-    video = HTMLElement.prototype.querySelector.call(videoPlayerContainer, 'video[src]')
+    video = window.HTMLElement.prototype.querySelector.call(videoPlayerContainer, 'video[src]')
     if (video !== null) {
       const paused = video.paused
       if (paused === true) {
@@ -575,8 +573,8 @@ function isYoutubeVideoPlaying () {
     }
   }
 }
-function addLyrics (force, beLessSpecific) {
 
+function addLyrics (force, beLessSpecific) {
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
   isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
   isTheatherView = !!document.querySelector('ytd-watch-flexy div#player-theater-container video')
@@ -809,10 +807,11 @@ function showSearchField (query) {
     hideButton
   ])
   document.body.appendChild(b)
-  
-  new Promise(function (resolve) {
+
+  function inputFocus () {
     input.focus()
-  })
+  }
+  new Promise(inputFocus)
 }
 
 function getHitOfElement (li) {
@@ -1100,17 +1099,15 @@ if (document.location.hostname.startsWith('music')) {
   })
 } else {
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
-  const setupMain = isRobotsTxt ? (
-    function setupMain () {
+  const setupMain = isRobotsTxt
+    ? function setupMain() {
       // do nothing
     }
-  ) : (
-    function setupMain () {
+    : function setupMain() {
       window.setTimeout(main, 2000)
       document.removeEventListener('yt-navigate-finish', main, false)
       document.addEventListener('yt-navigate-finish', main, false)
     }
-  )
 
   // should it be required for robots.txt as well?? can remove??
   genius = geniusLyrics({

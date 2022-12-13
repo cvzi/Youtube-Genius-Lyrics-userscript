@@ -86,9 +86,10 @@ function addCss () {
   }
   #lyricscontainer {
     position:fixed;
+    right:0;
     margin:0px;
     padding:0px;
-    background:white;
+    background-color:white;
     z-index:2001;
     font-size:1.4rem;
     border:none;
@@ -104,7 +105,7 @@ function addCss () {
     font-size : 0.7em;
     text-align:right;
     padding-right:10px;
-    background:#fafafa;
+    background-color:#fafafa;
    }
   .lyricsnavbar span,.lyricsnavbar a:link,.lyricsnavbar a:visited  {
     color:#606060;
@@ -116,56 +117,94 @@ function addCss () {
     text-decoration:none;
   }
   .loadingspinner {
-      color:black;
-      font-size:1em;
-      line-height:2.5em;
-    }
+    color:black;
+    font-size:1em;
+    line-height:2.5em;
+  }
   .loadingspinnerholder {
     z-index:2050;
     background-color:white;
     position:absolute;
     top:56px;
     right:100px;
-    cursor:progress
+    cursor:progress;
   }
-  .lorem {padding:10px 0px 0px 15px; font-size: 1.4rem;line-height: 2.2rem;letter-spacing: 0.3rem;}
-  .lorem .white {background:white;color:white}
-  .lorem .gray {background:rgb(204, 204, 204);color:rgb(204, 204, 204)}
+  .lorem {
+    padding:10px 0px 0px 15px;
+    font-size: 1.4rem;
+    line-height: 2.2rem;
+    letter-spacing: 0.3rem;
+    user-select: none !important;
+    pointer-events: none !important;
+  }
+  .lorem .white {
+    background-color:white;
+    color:white;
+    user-select: none !important;
+  }
+  .lorem .gray {
+    background-color:rgb(204, 204, 204);
+    color:rgb(204, 204, 204);
+    user-select: none !important;
+  }
   #showlyricsbutton {
     position:absolute;
+    z-index:3000;
     right:0px;
     color:#ffff64;
     cursor:pointer;
-    background:#000a;
+
+    background-color:#000a;
     border-radius:50%;
     margin:auto;
     padding:0px 1px;
     text-align:center;
     font-size:15px;
     line-height:14px;
-    z-index:3000;
   }
-  .youtube-genius-lyrics-container{
+  #showlyricsbutton.youtube-genius-lyrics-button-g-small{
+    /*
+    position:absolute;
+    z-index:3000;
+    right:0px;
+    color:#ffff64;
+    cursor:pointer;
+    */
+    background-color:#0008;
+    border-radius: 100%;
+    top: 0px;
+    border:2px solid #ffff64;
+    padding: 0px 3px;
+    font-size: 12px;
+  }
+  .youtube-genius-lyrics-search-container{
     border: 1px solid black;
     border-radius: 3px;
     padding: 5px;
     padding-right: 15px;
   }
-  span.youtube-genius-lyrics-container-span{
+  span.youtube-genius-lyrics-search-container-span{
     cursor:pointer;
+    vertical-align: middle;
   }
-  span.youtube-genius-lyrics-container-hide-button{
+  span.youtube-genius-lyrics-search-container-hide-btn{
     cursor:pointer;
     padding-left: 10px;
     color: black;
     font-size: larger;
-    vertical-align: top;
+    vertical-align: middle;
   }
   span.youtube-genius-lyrics-second-line-separator{
     padding:0px 3px;
   }
+  .youtube-genius-lyrics-results-container{
+    border: 1px solid black;
+    border-radius: 3px;
+  }
   ol.youtube-genius-lyrics-tracklist{
-    listStyle: none;
+    list-style: none;
+    width:99%;
+    font-size:1.15em;
   }
   li.youtube-genius-lyrics-result{
     cursor: pointer;
@@ -173,6 +212,10 @@ function addCss () {
     padding: 3px;
     margin: 2px;
     border-radius: 3px;
+  }
+  .youtube-genius-lyrics-results-container-hide-btn,
+  .youtube-genius-lyrics-results-container-back-btn{
+    cursor:pointer;
   }
 
   li.youtube-genius-lyrics-result div.onhover{
@@ -204,7 +247,38 @@ function addCss () {
   li.youtube-genius-lyrics-result div.onout span{
     font-size:1.5em;
   }
+  html[youtube-genius-lyrics-container] ytd-watch-flexy[theater] #movie_player .ytp-left-controls {
+    max-width: 50%;
+  }
+  html[youtube-genius-lyrics-container] ytd-watch-flexy[theater] #movie_player .ytp-right-controls {
+    float: right;
+  }
   `
+}
+
+function appendElements (target, elements) {
+  if (typeof target.append === 'function') {
+    target.append(...elements)
+  } else {
+    for (const element of elements) {
+      target.appendChild(element)
+    }
+  }
+}
+
+const removeElements = (typeof window.DocumentFragment.prototype.append === 'function')
+  ? function (elements) {
+    document.createDocumentFragment().append(...elements)
+  }
+  : function (elements) {
+    for (const element of elements) {
+      element.remove()
+    }
+  }
+
+function getMastheadHeight () {
+  const masthead = document.querySelector('ytd-masthead#masthead')
+  return masthead.getBoundingClientRect().height
 }
 
 function calcContainerWidthTop () {
@@ -223,14 +297,29 @@ function calcContainerWidthTop () {
     w = window.innerWidth * 0.45
   }
   w = Math.min(window.innerWidth * 0.75, w)
-  const top = document.getElementById('masthead-container').clientHeight
-  return [w, top]
+
+  const top = getMastheadHeight()
+  if (isTheatherView) {
+    return {
+      top,
+      width: parseInt(0.3 * document.querySelector('#columns').clientWidth),
+      isTheatherView
+    }
+  } else {
+    return {
+      top,
+      width: w,
+      isTheatherView
+    }
+  }
 }
 
-function setFrameDimensions (container, iframe) {
-  const bar = container.querySelector('.lyricsnavbar')
-  const width = iframe.style.width = container.clientWidth - 1 + 'px'
-  const height = iframe.style.height = window.innerHeight - bar.clientHeight - document.getElementById('masthead-container').clientHeight + 'px'
+function setFrameDimensions (container, iframe, bar) {
+  // const bar = container.querySelector('.lyricsnavbar')
+  // const width = iframe.style.width = container.clientWidth - 1 + 'px'
+  // const height = iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
+  iframe.style.width = container.clientWidth - 1 + 'px'
+  iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
 
   if (genius.option.themeKey === 'spotify') {
     iframe.style.backgroundColor = '#181818'
@@ -239,7 +328,7 @@ function setFrameDimensions (container, iframe) {
     iframe.style.backgroundColor = ''
   }
 
-  return [width, height]
+  // return [width, height]
 }
 
 function onResize () {
@@ -257,107 +346,91 @@ function resize () {
     return
   }
 
-  const [w, top] = calcContainerWidthTop()
+  const { top, width } = calcContainerWidthTop()
 
-  if (isTheatherView) {
-    container.style.top = '0px'
-    container.style.width = 0.3 * document.querySelector('#columns').clientWidth + 'px'
-    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = '50%'
-    document.querySelector('#movie_player .ytp-right-controls').style.float = 'right'
-  } else {
-    container.style.top = top + 'px'
-    container.style.width = w + 'px'
-    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = ''
-    document.querySelector('#movie_player .ytp-right-controls').style.float = ''
-  }
+  container.style.top = `${top}px`
+  container.style.width = `${width}px`
 
   if (iframe) {
-    setFrameDimensions(container, iframe)
+    const bar = container.querySelector('.lyricsnavbar')
+    setFrameDimensions(container, iframe, bar)
   }
 }
 
 function getCleanLyricsContainer () {
-  let container
+  let container = null
 
-  const [w, top] = calcContainerWidthTop()
+  const { top, width } = calcContainerWidthTop()
 
-  if (isTheatherView) {
-    if (!document.getElementById('lyricscontainer')) {
-      container = document.createElement('div')
-      container.id = 'lyricscontainer'
-      document.body.appendChild(container)
-    } else {
-      container = document.getElementById('lyricscontainer')
-      container.innerHTML = ''
-    }
-    container.style = ''
-    container.style.top = top + 'px'
-    container.style.width = parseInt(0.3 * document.querySelector('#columns').clientWidth) + 'px'
-    container.style.right = '0px'
-    container.style.position = 'fixed'
-
-    document.querySelector('#columns').appendChild(container)
-
-    document.querySelector('#movie_player .ytp-left-controls').style.maxWidth = '50%'
-    document.querySelector('#movie_player .ytp-right-controls').style.float = 'right'
-
-    return document.getElementById('lyricscontainer')
-  } else {
-    if (!document.getElementById('lyricscontainer')) {
-      container = document.createElement('div')
-      container.id = 'lyricscontainer'
-      document.body.appendChild(container)
-    } else {
-      container = document.getElementById('lyricscontainer')
-      container.innerHTML = ''
-    }
-    container.style = ''
-    container.style.top = top + 'px'
-    container.style.width = w + 'px'
-    container.style.right = '0px'
-
+  if (!document.getElementById('lyricscontainer')) {
+    container = document.createElement('div')
+    container.id = 'lyricscontainer'
     document.body.appendChild(container)
-
-    return document.getElementById('lyricscontainer')
+  } else {
+    container = document.getElementById('lyricscontainer')
+    container.innerHTML = ''
+    container.clasName = ''
+    container.style = ''
   }
+
+  container.style.top = `${top}px`
+  container.style.width = `${width}px`
+  document.body.appendChild(container)
+
+  const result = document.getElementById('lyricscontainer')
+  if (result !== container) {
+    console.warn(SCRIPT_NAME + ' getCleanLyricsContainer() Could not insert the element correctly')
+  }
+
+  return result
 }
 
 function hideLyrics () {
-  document.querySelectorAll('.loadingspinner').forEach((spinner) => spinner.remove())
-  if (document.getElementById('lyricscontainer')) {
-    document.getElementById('lyricscontainer').remove()
+  const elementsToBeRemoved = [...document.querySelectorAll('.loadingspinner')]
+  const lyricscontainer = document.getElementById('lyricscontainer')
+  if (lyricscontainer) {
+    elementsToBeRemoved.push(lyricscontainer)
+    document.documentElement.removeAttribute('youtube-genius-lyrics-container')
   }
+  removeElements(elementsToBeRemoved)
   addLyricsButton()
 }
 
 function onFullScreenChanged () {
-  if (document.getElementById('showlyricsbutton')) {
-    document.getElementById('showlyricsbutton').style.display = document.fullscreenElement ? 'none' : 'block'
+  const showlyricsbutton = document.getElementById('showlyricsbutton')
+  if (showlyricsbutton) {
+    showlyricsbutton.style.display = document.fullscreenElement ? 'none' : 'block'
   }
+}
+
+async function showLyricsButtonClicked () {
+  genius.option.autoShow = true // Temporarily enable showing lyrics automatically on song change
+  window.setTimeout(main, 2000)
+  document.removeEventListener('yt-navigate-finish', main, false)
+  document.addEventListener('yt-navigate-finish', main, false)
+  addLyrics(true)
 }
 
 function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
   }
-  const top = calcContainerWidthTop()[1]
+  const top = getMastheadHeight()
   const b = document.createElement('div')
   b.setAttribute('id', 'showlyricsbutton')
   b.setAttribute('style', 'top:' + (top + 2) + 'px;')
   b.setAttribute('title', 'Load lyrics from genius.com')
-  b.appendChild(document.createTextNode('🅖'))
+  b.textContent = '🅖'
   b.addEventListener('click', function onShowLyricsButtonClick () {
-    genius.option.autoShow = true // Temporarily enable showing lyrics automatically on song change
-    window.setTimeout(main, 2000)
-    document.removeEventListener('yt-navigate-finish', main, false)
-    document.addEventListener('yt-navigate-finish', main, false)
-    b.remove()
-    addLyrics(true)
+    this.remove()
+    showLyricsButtonClicked()
   })
   document.body.appendChild(b)
   if (b.clientWidth < 10) {
-    b.setAttribute('style', 'position:absolute; top: 0px; right:0px; background-color:#0008; color:#ffff64; cursor:pointer; z-index:3000;border:2px solid #ffff64;border-radius: 100%;padding: 0px 3px;font-size: 12px;')
+    b.classList.add('youtube-genius-lyrics-button-g-small')
     b.innerHTML = 'G'
+  } else {
+    b.classList.add('youtube-genius-lyrics-button-g-normal')
   }
 
   document.removeEventListener('fullscreenchange', onFullScreenChanged, false)
@@ -369,6 +442,134 @@ let lastVideoId = null
 let lastForceVideoId = null
 let isNormalView = false
 let isTheatherView = false
+let hitMaps = null
+
+function obtainDataCarouselLockups (ep) {
+  if (!ep) {
+    return null
+  }
+  let m = null
+  try {
+    m = ep.engagementPanelSectionListRenderer.content.structuredDescriptionContentRenderer.items[2].videoDescriptionMusicSectionRenderer.carouselLockups
+  } catch (e) {
+    m = null
+  }
+  return m
+}
+
+function getSimpleText (defaultMetadata) {
+  if (!defaultMetadata) {
+    return null
+  }
+  if (typeof defaultMetadata.simpleText === 'string') {
+    return defaultMetadata.simpleText
+  }
+  if (defaultMetadata.runs) {
+    const texts = defaultMetadata.runs.map(entry => entry.text)
+    if (texts.length === 1 && typeof texts[0] === 'string') {
+      return texts[0]
+    }
+  }
+  return null
+}
+
+function simpleTextFixup (text) {
+  return text.replace(/だ/g, 'だ')
+}
+
+function getMusicTitleAndAuthor (pData) {
+  const response = pData.response
+  const engagementPanels = response.engagementPanels
+  let carouselLockups = null
+  for (const ep of engagementPanels) {
+    const m = obtainDataCarouselLockups(ep)
+    if (m !== null) {
+      carouselLockups = m
+      break
+    }
+  }
+
+  if (carouselLockups && carouselLockups.length === 1) {
+    let a1 = null
+    let a2 = null
+    try {
+      a1 = carouselLockups[0].carouselLockupRenderer.infoRows[0].infoRowRenderer.defaultMetadata
+      a2 = carouselLockups[0].carouselLockupRenderer.infoRows[1].infoRowRenderer.defaultMetadata
+    } catch (e) { }
+    a1 = getSimpleText(a1)
+    a2 = getSimpleText(a2)
+
+    if (a1 && a2 && typeof a1 === 'string' && typeof a2 === 'string') {
+      let title = null
+      try {
+        title = pData.playerResponse.videoDetails.title
+      } catch (e) { }
+      if (title && typeof title === 'string') {
+        a1 = simpleTextFixup(a1)
+        a2 = simpleTextFixup(a2)
+        title = simpleTextFixup(title)
+        const newValue = `${a2} ${a1}`
+        return {
+          title,
+          singer: a2,
+          song: a1,
+          text: newValue
+        }
+      }
+    }
+  }
+  return null
+}
+
+function getYoutubeMainVideo () {
+  let video = document.querySelector('#ytd-player #movie_player video[src]')
+  if (video !== null) {
+    return video
+  }
+  video = document.querySelector('video[src]')
+  if (video !== null) {
+    return video
+  }
+  return null
+}
+
+function isYoutubeVideoPlaying () {
+  const videoPlayerContainer = document.querySelector('#ytd-player #movie_player')
+  let video = null
+  if (videoPlayerContainer) {
+    const isPaused = videoPlayerContainer.classList.contains('paused-mode')
+    if (isPaused) {
+      return false
+    }
+    const isPlaying = videoPlayerContainer.classList.contains('playing-mode')
+    if (isPlaying) {
+      return true
+    }
+    video = window.HTMLElement.prototype.querySelector.call(videoPlayerContainer, 'video[src]')
+    if (video !== null) {
+      const paused = video.paused
+      if (paused === true) {
+        return false
+      }
+      if (paused === false) {
+        return true
+      }
+    }
+  }
+  if (video === null) {
+    video = document.querySelector('video[src]')
+  }
+  if (video !== null) {
+    const paused = video.paused
+    if (paused === true) {
+      return false
+    }
+    if (paused === false) {
+      return true
+    }
+  }
+}
+
 function addLyrics (force, beLessSpecific) {
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
   isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
@@ -380,21 +581,13 @@ function addLyrics (force, beLessSpecific) {
   }
 
   let isMusic = false
-
   let ytdAppData = null
-  try {
-    ytdAppData = document.querySelector('ytd-app').__data.data
-  } catch (e) {}
-  const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
-  if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
-    isMusic = true
-  }
-  if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
-    isMusic = true
-  }
+  let songTitle = null
+  let ytdDescriptionInfo = null
+
   let videoDetails
   try {
-    if (!ytdAppData) ytdAppData = document.querySelector('ytd-app').__data.data
+    ytdAppData = document.querySelector('ytd-app').__data.data
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
       videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
     } else {
@@ -416,6 +609,24 @@ function addLyrics (force, beLessSpecific) {
     videoDetails.keywords = []
   }
 
+  if (ytdAppData) {
+    ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
+    if (ytdDescriptionInfo !== null) {
+      isMusic = true
+    }
+  }
+
+  if (ytdDescriptionInfo === null) {
+    const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
+    if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
+      isMusic = true
+    }
+    if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
+      isMusic = true
+    }
+    songTitle = videoTitle
+  }
+
   if ('videoId' in videoDetails) {
     if (lastVideoId === videoDetails.videoId + genius.option.themeKey && document.getElementById('lyricscontainer')) {
       // Same video id and same theme and lyrics are showing -> stop here
@@ -431,17 +642,17 @@ function addLyrics (force, beLessSpecific) {
     lastForceVideoId = lastVideoId
   }
 
-  if (!isMusic) {
+  if (isMusic === false) {
     const keywords = videoDetails.keywords.join('').toLowerCase()
-    for (let i = 0; i < musicKeywords.length; i++) {
-      if (keywords.indexOf(musicKeywords[i].toLowerCase()) !== -1) {
+    for (const musicKeyword of musicKeywords) {
+      if (keywords.indexOf(musicKeyword.toLowerCase()) !== -1) {
         isMusic = true
         break
       }
     }
     videoDetails.shortDescription = videoDetails.shortDescription.toLowerCase()
-    for (let i = 0; i < musicDescriptors.length; i++) {
-      if (videoDetails.shortDescription.indexOf(musicDescriptors[i].toLowerCase()) !== -1) {
+    for (const musicDescriptor of musicDescriptors) {
+      if (videoDetails.shortDescription.indexOf(musicDescriptor.toLowerCase()) !== -1) {
         isMusic = true
         break
       }
@@ -453,103 +664,106 @@ function addLyrics (force, beLessSpecific) {
     return
   }
   let songArtists
-  let songTitle = videoTitle.replace(/\(.+?\)/, '')
-  songTitle = songTitle.replace(/\[.+?\]/, '')
+  if (ytdDescriptionInfo === null) {
+    songTitle = songTitle.replace(/\(.+?\)/, '')
+    songTitle = songTitle.replace(/\[.+?\]/, '')
+    songTitle = songTitle.replace(/official\s*audio/, '')
+    songTitle = songTitle.replace(/official\s*music\s*video/, '')
+    songTitle = songTitle.replace(/official\s*video/, '')
+    songTitle = songTitle.replace(/music\s*video/, '')
+    songTitle = songTitle.replace(/video/, '')
+    songTitle = songTitle.replace(/music/, '')
+    songTitle = songTitle.replace(/exclusive\s*-?/, '')
+    songTitle = songTitle.replace(/-\s*-/, ' - ')
+    songTitle = songTitle.trim()
 
-  songTitle = songTitle.replace(/official\s*audio/, '')
-  songTitle = songTitle.replace(/official\s*music\s*video/, '')
-  songTitle = songTitle.replace(/official\s*video/, '')
-  songTitle = songTitle.replace(/music\s*video/, '')
-  songTitle = songTitle.replace(/video/, '')
-  songTitle = songTitle.replace(/music/, '')
-  songTitle = songTitle.replace(/exclusive\s*-?/, '')
-  songTitle = songTitle.replace(/-\s*-/, ' - ')
-  songTitle = songTitle.trim()
+    // Pattern: Artist  - Song title
+    songTitle = songTitle.split(/\s+[-–]\s+/)
 
-  // Pattern: Artist  - Song title
-  songTitle = songTitle.split(/\s+[-–]\s+/)
-
-  if (songTitle.length === 1) {
-    // Pattern: Artist | Song title
-    const m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
-    if (m) {
-      songTitle = [m[1], m[2]]
+    if (songTitle.length === 1) {
+      // Pattern: Artist | Song title
+      const m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
+      if (m) {
+        songTitle = [m[1], m[2]]
+      }
     }
-  }
 
-  if (songTitle.length === 1) {
-    // Pattern: Artist "Song title"
-    const m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
-    if (m) {
-      songTitle = [m[1], m[2]]
+    if (songTitle.length === 1) {
+      // Pattern: Artist "Song title"
+      const m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
+      if (m) {
+        songTitle = [m[1], m[2]]
+      }
     }
-  }
 
-  if (songTitle.length === 1) {
-    // Pattern: Songtitle by Artist
-    const m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
-    if (m) {
-      songTitle = [m[2], m[1]]
+    if (songTitle.length === 1) {
+      // Pattern: Songtitle by Artist
+      const m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
+      if (m) {
+        songTitle = [m[2], m[1]]
+      }
     }
-  }
 
-  if (songTitle.length === 1 && 'author' in videoDetails) {
-    // Fallback to video author name
-    songArtists = videoDetails.author.toLowerCase()
-    songArtists = songArtists.replace(/vevo/, '')
-    songArtists = songArtists.replace(/official/, '')
-    songArtists = songArtists.replace(/music/, '')
-    songArtists = songArtists.replace(/band/, '')
-    songArtists = songArtists.replace(/-\s*topic/, '')
+    if (songTitle.length === 1 && 'author' in videoDetails) {
+      // Fallback to video author name
+      songArtists = videoDetails.author.toLowerCase()
+      songArtists = songArtists.replace(/vevo/, '')
+      songArtists = songArtists.replace(/official/, '')
+      songArtists = songArtists.replace(/music/, '')
+      songArtists = songArtists.replace(/band/, '')
+      songArtists = songArtists.replace(/-\s*topic/, '')
+    } else {
+      songArtists = songTitle.shift().trim()
+    }
+
+    const songArtistsArr = songArtists.split(',').map(s => s.trim())
+    songTitle = songTitle.join(' - ').trim()
+    songTitle = genius.f.cleanUpSongTitle(songTitle)
+    const musicIsPlaying = isYoutubeVideoPlaying()
+    genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   } else {
-    songArtists = songTitle.shift().trim()
+    const songArtistsArr = [ytdDescriptionInfo.singer]
+    // const songArtists = ytdDescriptionInfo.singer
+    songTitle = ytdDescriptionInfo.song
+    const musicIsPlaying = isYoutubeVideoPlaying()
+    genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   }
-
-  const songArtistsArr = songArtists.split(',').map(s => s.trim())
-  songTitle = songTitle.join(' - ').trim()
-
-  songTitle = genius.f.cleanUpSongTitle(songTitle)
-
-  const musicIsPlaying = document.querySelector('.ytp-play-button.ytp-button').title.indexOf('Pause') !== -1
-  genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
 }
 
 let lastPos = null
-function updateAutoScroll () {
+function updateAutoScroll (video) {
   let pos = null
-  try {
-    const video = document.querySelector('video')
-    pos = video.currentTime / video.duration
-  } catch (e) {
-    // Could not parse current song position
-    pos = null
+  if (!video) {
+    video = getYoutubeMainVideo()
   }
-  if (pos != null && !Number.isNaN(pos) && lastPos !== pos) {
-    genius.f.scrollLyrics(pos)
+  if (video) {
+    pos = video.currentTime / video.duration
+  }
+  if (pos !== null && pos >= 0 && lastPos !== pos) {
     lastPos = pos
+    genius.f.scrollLyrics(pos)
   }
 }
 
 function showSearchField (query) {
-  const b = getCleanLyricsContainer()
-  b.classList.add('youtube-genius-lyrics-container')
+  const spanLabel = document.createElement('span')
+  spanLabel.classList.add('youtube-genius-lyrics-search-container-label')
+  spanLabel.textContent = 'Search genius.com: '
 
-  b.appendChild(document.createTextNode('Search genius.com: '))
-  const input = b.appendChild(document.createElement('input'))
+  const input = document.createElement('input')
   input.className = 'SearchInputBox__input'
   input.placeholder = 'Search genius.com...'
 
-  const span = b.appendChild(document.createElement('span'))
-  span.classList.add('youtube-genius-lyrics-container-span')
+  const span = document.createElement('span')
+  span.classList.add('youtube-genius-lyrics-search-container-span')
   span.textContent = ' \uD83D\uDD0D'
 
   // Hide button
-  const hideButton = b.appendChild(document.createElement('span'))
-  hideButton.classList.add('youtube-genius-lyrics-container-hide-button')
+  const hideButton = document.createElement('span')
+  hideButton.classList.add('youtube-genius-lyrics-search-container-hide-btn')
   hideButton.title = 'Hide'
   hideButton.textContent = '\uD83C\uDD87'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
-    ev.preventDefault()
     hideLyrics()
   })
 
@@ -564,7 +778,7 @@ function showSearchField (query) {
     }
   })
   input.addEventListener('keyup', function onSearchLyricsKeyUp (ev) {
-    if (ev.keyCode === 13) {
+    if (ev.code === 'Enter') {
       ev.preventDefault()
       if (input.value) {
         genius.f.searchByQuery(input.value, b)
@@ -577,21 +791,50 @@ function showSearchField (query) {
     }
   })
 
+  // flush DOM
+  const b = getCleanLyricsContainer()
+  b.classList.add('youtube-genius-lyrics-search-container')
+  document.documentElement.setAttribute('youtube-genius-lyrics-container', 'search')
+  appendElements(b, [
+    spanLabel,
+    input,
+    span,
+    hideButton
+  ])
   document.body.appendChild(b)
-  input.focus()
+
+  /* eslint-disable no-new */
+  new Promise(() => {
+    input.focus()
+  })
+}
+
+function getHitOfElement (li) {
+  if (!li || li.nodeType !== 1) {
+    return null
+  }
+  if (!hitMaps) {
+    return null
+  }
+  return hitMaps.get(li) || null
+}
+
+async function rememberLyricsSelection (title, artists, hit) {
+  // in order to call "genius.f.rememberLyricsSelection(title, artists, jsonHit)", use async call to get jsonHit
+  /* eslint-disable no-new */
+  const jsonHit = await new Promise(function (resolve) {
+    // this is not a complete async function, but it helps not to block the scripting
+    resolve(JSON.stringify(hit))
+  })
+  genius.f.rememberLyricsSelection(title, artists, jsonHit)
 }
 
 function listSongs (hits, container, query) {
-  if (!container) {
-    container = getCleanLyricsContainer()
-  }
-
   // Back to search button
-  const backToSearchButton = document.createElement('a')
-  backToSearchButton.href = '#'
+  const backToSearchButton = document.createElement('span')
+  backToSearchButton.classList.add('youtube-genius-lyrics-results-container-back-btn')
   backToSearchButton.textContent = 'Back to search'
   backToSearchButton.addEventListener('click', function backToSearchButtonClick (ev) {
-    ev.preventDefault()
     if (query) {
       showSearchField(query)
     } else if (genius.current.artists) {
@@ -607,39 +850,34 @@ function listSongs (hits, container, query) {
   separator.textContent = '•'
 
   // Hide button
-  const hideButton = document.createElement('a')
-  hideButton.href = '#'
+  const hideButton = document.createElement('span')
+  hideButton.classList.add('youtube-genius-lyrics-results-container-hide-btn')
   hideButton.textContent = 'Hide'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
-    ev.preventDefault()
     hideLyrics()
   })
 
   // List search results
-  container.innerHTML = '<ol class="tracklist" style="width:99%; font-size:1.15em"></ol>'
+  const tracklistOL = document.createElement('ol')
+  tracklistOL.classList.add('tracklist')
+  tracklistOL.classList.add('youtube-genius-lyrics-tracklist')
+  tracklistOL.addEventListener('click', function onclick (ev) {
+    const element = ev.target
+    if (element.nodeName === 'LI') {
+      const hit = getHitOfElement(element)
+      if (hit !== null) {
+        genius.f.showLyrics(hit, searchresultsLengths)
+        rememberLyricsSelection(title, artists, hit)
+      }
+    }
+  }, true)
 
-  container.style.border = '1px solid black'
-  container.style.borderRadius = '3px'
-
-  container.insertBefore(hideButton, container.firstChild)
-  container.insertBefore(separator, container.firstChild)
-  container.insertBefore(backToSearchButton, container.firstChild)
-
-  const ol = container.querySelector('ol.tracklist')
-  ol.classList.add('youtube-genius-lyrics-tracklist')
+  // cache the required information
   const searchresultsLengths = hits.length
   const title = genius.current.title
   const artists = genius.current.artists
 
-  const onclick = function onclick (event) {
-    const element = event.target
-    if (element.nodeName === 'LI') {
-      genius.f.rememberLyricsSelection(title, artists, element.dataset.hit)
-      genius.f.showLyrics(JSON.parse(element.dataset.hit), searchresultsLengths)
-    }
-  }
-  ol.addEventListener('click', onclick, true)
-
+  // prepare results
   const liArr = hits.map(function hitsMap (hit) {
     const li = document.createElement('li')
     li.classList.add('youtube-genius-lyrics-result')
@@ -651,16 +889,29 @@ function listSongs (hits, container, query) {
     <div style="float:left; margin-left:5px">${hit.result.primary_artist.name} • ${hit.result.title_with_featured} <br><span style="font-size:0.7em">👁 ${genius.f.metricPrefix(hit.result.stats.pageviews, 1)} ${hit.result.lyrics_state}</span></div>
     <div style="clear:left;"></div>`
     li.innerHTML = trackhtml
-    li.dataset.hit = JSON.stringify(hit)
+    if (!hitMaps) {
+      hitMaps = new WeakMap()
+    }
+    hitMaps.set(li, hit)
     return li
   })
-  if (typeof ol.append === 'function') {
-    ol.append(...liArr)
+  appendElements(tracklistOL, liArr)
+
+  // Flush DOM
+  if (!container) {
+    container = getCleanLyricsContainer()
   } else {
-    for (const li of liArr) {
-      ol.appendChild(li)
-    }
+    container.className = ''
   }
+  container.classList.add('youtube-genius-lyrics-results-container')
+  document.documentElement.setAttribute('youtube-genius-lyrics-container', 'results')
+  container.innerHTML = ''
+  appendElements(container, [
+    backToSearchButton,
+    separator,
+    hideButton,
+    tracklistOL
+  ])
 }
 
 function loremIpsum () {
@@ -798,7 +1049,7 @@ function newAppHint (status) {
     const aSource = p.appendChild(document.createElement('a'))
     aSource.target = '_blank'
     aSource.href = 'https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'
-    aSource.appendChild(document.createTextNode('📑 https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'))
+    aSource.textContent = '📑 https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'
 
     p.appendChild(document.createElement('br'))
     p.appendChild(document.createElement('br'))
@@ -843,6 +1094,18 @@ if (document.location.hostname.startsWith('music')) {
     window.setTimeout(() => newAppHint(status), 5000)
   })
 } else {
+  const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
+  const setupMain = isRobotsTxt
+    ? function setupMain () {
+      // do nothing
+    }
+    : function setupMain () {
+      window.setTimeout(main, 2000)
+      document.removeEventListener('yt-navigate-finish', main, false)
+      document.addEventListener('yt-navigate-finish', main, false)
+    }
+
+  // should it be required for robots.txt as well?? can remove??
   genius = geniusLyrics({
     GM,
     scriptName: SCRIPT_NAME,
@@ -851,7 +1114,9 @@ if (document.location.hostname.startsWith('music')) {
     domain: 'https://www.youtube.com/',
     emptyURL: 'https://www.youtube.com/robots.txt',
     main,
+    setupMain,
     addCss,
+    getHitOfElement,
     listSongs,
     showSearchField,
     addLyrics,
@@ -861,6 +1126,13 @@ if (document.location.hostname.startsWith('music')) {
     onResize,
     createSpinner
   })
-  GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
-  window.setInterval(updateAutoScroll, 7000)
+  if (isRobotsTxt === false) {
+    GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
+    document.addEventListener('timeupdate', (ev) => {
+      if (genius.f.isScrollLyricsEnabled()) {
+        if ((ev || 0).target.nodeName === 'VIDEO') updateAutoScroll()
+      }
+    }, true)
+    document.documentElement.classList.add('youtube-genius-lyrics')
+  }
 }

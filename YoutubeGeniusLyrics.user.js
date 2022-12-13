@@ -445,11 +445,9 @@ let isTheatherView = false
 let hitMaps = null
 
 function obtainDataCarouselLockups (ep) {
-
   if (!ep) {
     return null
   }
-
   let m = null
   try {
     m = ep.engagementPanelSectionListRenderer.content.structuredDescriptionContentRenderer.items[2].videoDescriptionMusicSectionRenderer.carouselLockups
@@ -457,7 +455,6 @@ function obtainDataCarouselLockups (ep) {
     m = null
   }
   return m
-
 }
 
 function getSimpleText (defaultMetadata) {
@@ -480,7 +477,7 @@ function simpleTextFixup (text) {
   return text.replace(/だ/g, 'だ')
 }
 
-function getMusicTitleAndAuthor (pData){
+function getMusicTitleAndAuthor (pData) {
   const response = pData.response
   const engagementPanels = response.engagementPanels
   let carouselLockups = null
@@ -520,7 +517,6 @@ function getMusicTitleAndAuthor (pData){
         }
       }
     }
-
   }
   return null
 }
@@ -628,7 +624,7 @@ function addLyrics (force, beLessSpecific) {
     if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
       isMusic = true
     }
-    songTitle = videoTitle 
+    songTitle = videoTitle
   }
 
   if ('videoId' in videoDetails) {
@@ -808,10 +804,10 @@ function showSearchField (query) {
   ])
   document.body.appendChild(b)
 
-  function inputFocus () {
+  /* eslint-disable no-new */
+  new Promise(() => {
     input.focus()
-  }
-  new Promise(inputFocus)
+  })
 }
 
 function getHitOfElement (li) {
@@ -826,6 +822,7 @@ function getHitOfElement (li) {
 
 async function rememberLyricsSelection (title, artists, hit) {
   // in order to call "genius.f.rememberLyricsSelection(title, artists, jsonHit)", use async call to get jsonHit
+  /* eslint-disable no-new */
   const jsonHit = await new Promise(function (resolve) {
     // this is not a complete async function, but it helps not to block the scripting
     resolve(JSON.stringify(hit))
@@ -1100,10 +1097,10 @@ if (document.location.hostname.startsWith('music')) {
 } else {
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
   const setupMain = isRobotsTxt
-    ? function setupMain() {
+    ? function setupMain () {
       // do nothing
     }
-    : function setupMain() {
+    : function setupMain () {
       window.setTimeout(main, 2000)
       document.removeEventListener('yt-navigate-finish', main, false)
       document.addEventListener('yt-navigate-finish', main, false)

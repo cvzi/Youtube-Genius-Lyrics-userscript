@@ -266,13 +266,17 @@ function appendElements (target, elements) {
   }
 }
 
-const removeElements = (typeof window.DocumentFragment.prototype.append === 'function') ? (elements) => {
-  document.createDocumentFragment().append(...elements)
-} : (elements) => {
-  for (const element of elements) {
-    element.remove()
+const removeElements = (typeof window.DocumentFragment.prototype.append === 'function') ? (
+  (elements) => {
+    document.createDocumentFragment().append(...elements)
   }
-}
+) : (
+  (elements) => {
+    for (const element of elements) {
+      element.remove()
+    }
+  }
+)
 
 function getMastheadHeight () {
   const masthead = document.querySelector('ytd-masthead#masthead')
@@ -379,7 +383,7 @@ function getCleanLyricsContainer () {
   document.body.appendChild(container)
 
   let result = document.getElementById('lyricscontainer')
-  if(result !== container){
+  if (result !== container) {
     console.warn(SCRIPT_NAME + ' getCleanLyricsContainer() Could not insert the element correctly')
   }
 
@@ -521,7 +525,7 @@ function getMusicTitleAndAuthor (pData){
         }
       }
     }
-    
+
   }
   return null
 }
@@ -827,8 +831,12 @@ function showSearchField (query) {
 }
 
 function getHitOfElement (li) {
-  if (!li || li.nodeType !== 1) return null
-  if(!hitMaps) return null
+  if (!li || li.nodeType !== 1) {
+    return null
+  }
+  if (!hitMaps) {
+    return null
+  }
   return hitMaps.get(li) || null
 }
 
@@ -1112,15 +1120,19 @@ if (document.location.hostname.startsWith('music')) {
   })
 } else {
 
-  let isRobotsTxt = location.href.indexOf('robots.txt') >= 0
+  const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
 
-  const setupMain = isRobotsTxt ? () => {
-    // do nothing
-  } : () => {
-    window.setTimeout(main, 2000)
-    document.removeEventListener('yt-navigate-finish', main, false)
-    document.addEventListener('yt-navigate-finish', main, false)
-  }
+  const setupMain = isRobotsTxt ? (
+    () => {
+      // do nothing
+    }
+  ) : (
+    () => {
+      window.setTimeout(main, 2000)
+      document.removeEventListener('yt-navigate-finish', main, false)
+      document.addEventListener('yt-navigate-finish', main, false)
+    }
+  )
 
   // should it be required for robots.txt as well?? can remove??
   genius = geniusLyrics({

@@ -521,7 +521,7 @@ function getMusicTitleAndAuthor (pData) {
   return null
 }
 
-function getYoutubeMainVideo() {
+function getYoutubeMainVideo () {
   let video = document.querySelector('#ytd-player #movie_player video[src]')
   if (video !== null) {
     return video
@@ -746,7 +746,6 @@ function updateAutoScroll (video) {
 }
 
 function showSearchField (query) {
-
   const spanLabel = document.createElement('span')
   spanLabel.classList.add('youtube-genius-lyrics-search-container-label')
   spanLabel.textContent = 'Search genius.com: '

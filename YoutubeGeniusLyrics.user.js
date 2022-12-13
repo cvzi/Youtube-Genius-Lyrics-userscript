@@ -266,17 +266,16 @@ function appendElements (target, elements) {
   }
 }
 
-const removeElements = (typeof window.DocumentFragment.prototype.append === 'function') ? (
-  function (elements) {
+const removeElements = (typeof window.DocumentFragment.prototype.append === 'function')
+  ? function (elements) {
     document.createDocumentFragment().append(...elements)
   }
-) : (
-  function (elements) {
+  : function (elements) {
     for (const element of elements) {
       element.remove()
     }
   }
-)
+
 
 function getMastheadHeight () {
   const masthead = document.querySelector('ytd-masthead#masthead')

@@ -976,9 +976,8 @@ function createSpinner (spinnerHolder) {
   return spinner
 }
 
-
 function iframeLoadedCallback1 (res) {
-  lyricsLoading = false;
+  lyricsLoading = false
   try {
     const { document, theme, onload } = res
     window.postMessage({
@@ -988,7 +987,7 @@ function iframeLoadedCallback1 (res) {
         theme,
         onload
       }
-    }, location.origin)
+    }, window.location.origin)
   } catch (e) { }
 }
 
@@ -1002,14 +1001,12 @@ function iframeLoadedCallback2 (res) {
         theme,
         onload
       }
-    }, location.origin)
+    }, window.location.origin)
   } catch (e) { }
 }
 
-
 function main () {
   if (document.querySelector('ytd-watch-flexy #container .title') && document.querySelector('ytd-watch-flexy #container .title').textContent) {
-
     if (lyricsLoading === true) {
       // lyricsLoading
     } else if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
@@ -1021,7 +1018,6 @@ function main () {
         addLyricsButton()
       }
     }
-
     if (genius.option.resizeOnNextRun) {
       genius.option.resizeOnNextRun = false
       resize()

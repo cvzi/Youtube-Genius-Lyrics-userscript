@@ -78,6 +78,8 @@ const musicDescriptors = [
   '.lnk.to/'
 ]
 
+let lyricsLoading = false
+
 function addCss () {
   // Spotify
   document.head.appendChild(document.createElement('style')).innerHTML = `
@@ -938,6 +940,7 @@ function loremIpsum () {
 }
 
 function createSpinner (spinnerHolder) {
+  lyricsLoading = true
   const lyricscontainer = document.getElementById('lyricscontainer')
 
   const rect = lyricscontainer.getBoundingClientRect()
@@ -973,13 +976,52 @@ function createSpinner (spinnerHolder) {
   return spinner
 }
 
+
+function iframeLoadedCallback1 (res) {
+  lyricsLoading = false;
+  try {
+    const { document, theme, onload } = res
+    window.postMessage({
+      youtubeGenius: {
+        eventType: 'iframeloaded-cb1',
+        document,
+        theme,
+        onload
+      }
+    }, location.origin)
+  } catch (e) { }
+}
+
+function iframeLoadedCallback2 (res) {
+  try {
+    const { document, theme, onload } = res
+    window.postMessage({
+      youtubeGenius: {
+        eventType: 'iframeloaded-cb2',
+        document,
+        theme,
+        onload
+      }
+    }, location.origin)
+  } catch (e) { }
+}
+
+
 function main () {
   if (document.querySelector('ytd-watch-flexy #container .title') && document.querySelector('ytd-watch-flexy #container .title').textContent) {
-    if (genius.option.autoShow) {
-      addLyrics()
+
+    if (lyricsLoading === true) {
+      // lyricsLoading
+    } else if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
+      // already added
     } else {
-      addLyricsButton()
+      if (genius.option.autoShow) {
+        addLyrics()
+      } else {
+        addLyricsButton()
+      }
     }
+
     if (genius.option.resizeOnNextRun) {
       genius.option.resizeOnNextRun = false
       resize()
@@ -1124,7 +1166,9 @@ if (document.location.hostname.startsWith('music')) {
     getCleanLyricsContainer,
     setFrameDimensions,
     onResize,
-    createSpinner
+    createSpinner,
+    iframeLoadedCallback1,
+    iframeLoadedCallback2
   })
   if (isRobotsTxt === false) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))

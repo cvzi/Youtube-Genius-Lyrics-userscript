@@ -1208,7 +1208,7 @@ if (document.location.hostname.startsWith('music')) {
         }
         if (data.visibility === 'hidden' || data.visibility === 'loaded') {
           lyricsLoading = false
-        }else if (data.visibility === 'loading') {
+        } else if (data.visibility === 'loading') {
           lyricsLoading = true
         }
         if (isScrollLyricsEnabled === true) {

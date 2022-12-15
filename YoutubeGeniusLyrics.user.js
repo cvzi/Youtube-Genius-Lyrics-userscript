@@ -398,9 +398,9 @@ function hideLyrics () {
   addLyricsButton()
 }
 
-const hideLyricsWithMessage = () => {
+function hideLyricsWithMessage () {
   const ret = hideLyrics(...arguments)
-  window.postMessage({ iAm: custom.scriptName, type: 'lyricsDisplayState', visibility: 'hidden' }, '*')
+  window.postMessage({ iAm: SCRIPT_NAME, type: 'lyricsDisplayState', visibility: 'hidden' }, '*')
   return ret
 }
 
@@ -674,9 +674,9 @@ function addLyrics (force, beLessSpecific) {
   } catch (e) {
     console.warn(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
     console.log(e)
-    videoDetails = { keywords: [], shortDescription: '' }
-    if (document.getElementById('meta')) {
-      videoDetails.shortDescription = document.getElementById('meta').textContent
+    videoDetails = {
+      keywords: [],
+      shortDescription: ((document.getElementById('meta') || 0).textContent || '')
     }
     const m = document.location.href.match(/v=(\w+)&?/)
     if (m && m[1]) {
@@ -691,8 +691,9 @@ function addLyrics (force, beLessSpecific) {
     }
   }
 
+  let videoTitle = null
   if (ytdDescriptionInfo === null) {
-    const videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
+    videoTitle = ytdAppData && ytdAppData.customVideoTitle ? ytdAppData.customVideoTitle : h1.textContent.toLowerCase()
     if (videoTitle.indexOf('official video') !== -1 || videoTitle.indexOf('music video') !== -1 || videoTitle.indexOf('audio') !== -1) {
       isMusic = true
     }
@@ -729,7 +730,7 @@ function addLyrics (force, beLessSpecific) {
         break
       }
     }
-    let shortDescription = (videoDetails.shortDescription || '').toLowerCase()
+    const shortDescription = (videoDetails.shortDescription || '').toLowerCase()
     for (const musicDescriptor of musicDescriptors) {
       if (shortDescription.indexOf(musicDescriptor.toLowerCase()) !== -1) {
         isMusic = true
@@ -1184,7 +1185,7 @@ if (document.location.hostname.startsWith('music')) {
   if (isRobotsTxt === false) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
 
-    function videoTimeUpdate (ev){
+    function videoTimeUpdate (ev) {
       if (genius.f.isScrollLyricsEnabled()) {
         if ((ev || 0).target.nodeName === 'VIDEO') updateAutoScroll()
       }
@@ -1199,8 +1200,8 @@ if (document.location.hostname.startsWith('music')) {
       }
     })
     window.addEventListener('message', function (e) {
-      let data = ((e || 0).data || 0)
-      if (data.iAm === custom.scriptName && data.type === 'lyricsDisplayState') {
+      const data = ((e || 0).data || 0)
+      if (data.iAm === SCRIPT_NAME && data.type === 'lyricsDisplayState') {
         let isScrollLyricsEnabled = false
         if (data.visibility === 'loaded' && data.lyricsSuccess === true) {
           isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()

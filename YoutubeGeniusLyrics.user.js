@@ -398,6 +398,12 @@ function hideLyrics () {
   addLyricsButton()
 }
 
+const hideLyricsWithMessage = () => {
+  const ret = hideLyrics(...arguments)
+  window.postMessage({ iAm: custom.scriptName, type: 'lyricsDisplayState', visibility: 'hidden' }, '*')
+  return ret
+}
+
 function onFullScreenChanged () {
   const showlyricsbutton = document.getElementById('showlyricsbutton')
   if (showlyricsbutton) {
@@ -572,19 +578,89 @@ function isYoutubeVideoPlaying () {
   }
 }
 
+function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
+  let songArtists
+  let songTitle = videoTitle
+
+  // song title text processing
+  songTitle = songTitle.replace(/\(.+?\)/, '')
+  songTitle = songTitle.replace(/\[.+?\]/, '')
+  songTitle = songTitle.replace(/official\s*audio/, '')
+  songTitle = songTitle.replace(/official\s*music\s*video/, '')
+  songTitle = songTitle.replace(/official\s*video/, '')
+  songTitle = songTitle.replace(/music\s*video/, '')
+  songTitle = songTitle.replace(/video/, '')
+  songTitle = songTitle.replace(/music/, '')
+  songTitle = songTitle.replace(/exclusive\s*-?/, '')
+  songTitle = songTitle.replace(/-\s*-/, ' - ')
+  songTitle = songTitle.trim()
+
+  // Pattern: Artist  - Song title
+  songTitle = songTitle.split(/\s+[-–]\s+/)
+
+  if (songTitle.length === 1) {
+    // Pattern: Artist | Song title
+    const m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
+    if (m) {
+      songTitle = [m[1], m[2]]
+    }
+  }
+
+  if (songTitle.length === 1) {
+    // Pattern: Artist "Song title"
+    const m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
+    if (m) {
+      songTitle = [m[1], m[2]]
+    }
+  }
+
+  if (songTitle.length === 1) {
+    // Pattern: Songtitle by Artist
+    const m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
+    if (m) {
+      songTitle = [m[2], m[1]]
+    }
+  }
+
+  if (songTitle.length === 1 && 'author' in videoDetails) {
+    // Fallback to video author name
+    songArtists = videoDetails.author.toLowerCase()
+    songArtists = songArtists.replace(/vevo/, '')
+    songArtists = songArtists.replace(/official/, '')
+    songArtists = songArtists.replace(/music/, '')
+    songArtists = songArtists.replace(/band/, '')
+    songArtists = songArtists.replace(/-\s*topic/, '')
+  } else {
+    songArtists = songTitle.shift().trim()
+  }
+
+  const songArtistsArr = songArtists.split(',').map(s => s.trim())
+  songTitle = songTitle.join(' - ').trim()
+  songTitle = genius.f.cleanUpSongTitle(songTitle)
+  // return object result
+  return { songTitle, songArtistsArr }
+}
+
+function newYtdDescriptionInfo (ytdDescriptionInfo) {
+  const songArtistsArr = [ytdDescriptionInfo.singer]
+  // const songArtists = ytdDescriptionInfo.singer
+  const songTitle = ytdDescriptionInfo.song
+  // return object result
+  return { songTitle, songArtistsArr }
+}
+
 function addLyrics (force, beLessSpecific) {
   const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
   isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
   isTheatherView = !!document.querySelector('ytd-watch-flexy div#player-theater-container video')
   if (!h1 || (!isNormalView && !isTheatherView)) {
     // Not a video page or video page not visible
-    hideLyrics()
+    hideLyricsWithMessage()
     return
   }
 
   let isMusic = false
   let ytdAppData = null
-  let songTitle = null
   let ytdDescriptionInfo = null
 
   let videoDetails
@@ -607,9 +683,6 @@ function addLyrics (force, beLessSpecific) {
       videoDetails.videoId = m[1]
     }
   }
-  if (!videoDetails.keywords) {
-    videoDetails.keywords = []
-  }
 
   if (ytdAppData) {
     ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
@@ -626,7 +699,6 @@ function addLyrics (force, beLessSpecific) {
     if (videoTitle.match(/.+\s+[-–]\s+.+/)) {
       isMusic = true
     }
-    songTitle = videoTitle
   }
 
   if ('videoId' in videoDetails) {
@@ -645,91 +717,37 @@ function addLyrics (force, beLessSpecific) {
   }
 
   if (isMusic === false) {
-    const keywords = videoDetails.keywords.join('').toLowerCase()
+    // keywords
+    let keywords = ''
+    if (videoDetails.keywords) {
+      keywords = videoDetails.keywords.join('').toLowerCase()
+    }
+
     for (const musicKeyword of musicKeywords) {
       if (keywords.indexOf(musicKeyword.toLowerCase()) !== -1) {
         isMusic = true
         break
       }
     }
-    videoDetails.shortDescription = videoDetails.shortDescription.toLowerCase()
+    let shortDescription = (videoDetails.shortDescription || '').toLowerCase()
     for (const musicDescriptor of musicDescriptors) {
-      if (videoDetails.shortDescription.indexOf(musicDescriptor.toLowerCase()) !== -1) {
+      if (shortDescription.indexOf(musicDescriptor.toLowerCase()) !== -1) {
         isMusic = true
         break
       }
     }
   }
 
-  if (!isMusic && (lastForceVideoId == null || lastForceVideoId !== lastVideoId)) {
-    hideLyrics()
+  if (isMusic === false && (lastForceVideoId === null || lastForceVideoId !== lastVideoId)) {
+    hideLyricsWithMessage()
     return
   }
-  let songArtists
-  if (ytdDescriptionInfo === null) {
-    songTitle = songTitle.replace(/\(.+?\)/, '')
-    songTitle = songTitle.replace(/\[.+?\]/, '')
-    songTitle = songTitle.replace(/official\s*audio/, '')
-    songTitle = songTitle.replace(/official\s*music\s*video/, '')
-    songTitle = songTitle.replace(/official\s*video/, '')
-    songTitle = songTitle.replace(/music\s*video/, '')
-    songTitle = songTitle.replace(/video/, '')
-    songTitle = songTitle.replace(/music/, '')
-    songTitle = songTitle.replace(/exclusive\s*-?/, '')
-    songTitle = songTitle.replace(/-\s*-/, ' - ')
-    songTitle = songTitle.trim()
 
-    // Pattern: Artist  - Song title
-    songTitle = songTitle.split(/\s+[-–]\s+/)
-
-    if (songTitle.length === 1) {
-      // Pattern: Artist | Song title
-      const m = songTitle[0].match(/(.+?)\s*\|\s*(.+)/)
-      if (m) {
-        songTitle = [m[1], m[2]]
-      }
-    }
-
-    if (songTitle.length === 1) {
-      // Pattern: Artist "Song title"
-      const m = songTitle[0].match(/(.+?)\s*["“”'`´*]+(.+)["“”'`´*]+/)
-      if (m) {
-        songTitle = [m[1], m[2]]
-      }
-    }
-
-    if (songTitle.length === 1) {
-      // Pattern: Songtitle by Artist
-      const m = songTitle[0].match(/(.+?)\s+by\s+(.+)/)
-      if (m) {
-        songTitle = [m[2], m[1]]
-      }
-    }
-
-    if (songTitle.length === 1 && 'author' in videoDetails) {
-      // Fallback to video author name
-      songArtists = videoDetails.author.toLowerCase()
-      songArtists = songArtists.replace(/vevo/, '')
-      songArtists = songArtists.replace(/official/, '')
-      songArtists = songArtists.replace(/music/, '')
-      songArtists = songArtists.replace(/band/, '')
-      songArtists = songArtists.replace(/-\s*topic/, '')
-    } else {
-      songArtists = songTitle.shift().trim()
-    }
-
-    const songArtistsArr = songArtists.split(',').map(s => s.trim())
-    songTitle = songTitle.join(' - ').trim()
-    songTitle = genius.f.cleanUpSongTitle(songTitle)
-    const musicIsPlaying = isYoutubeVideoPlaying()
-    genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
-  } else {
-    const songArtistsArr = [ytdDescriptionInfo.singer]
-    // const songArtists = ytdDescriptionInfo.singer
-    songTitle = ytdDescriptionInfo.song
-    const musicIsPlaying = isYoutubeVideoPlaying()
-    genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
-  }
+  const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
+    ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
+    : newYtdDescriptionInfo(ytdDescriptionInfo)
+  const musicIsPlaying = isYoutubeVideoPlaying()
+  genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
 }
 
 let lastPos = null
@@ -766,7 +784,7 @@ function showSearchField (query) {
   hideButton.title = 'Hide'
   hideButton.textContent = '\uD83C\uDD87'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
-    hideLyrics()
+    hideLyricsWithMessage()
   })
 
   if (query) {
@@ -812,10 +830,7 @@ function showSearchField (query) {
 }
 
 function getHitOfElement (li) {
-  if (!li || li.nodeType !== 1) {
-    return null
-  }
-  if (!hitMaps) {
+  if (!li || li.nodeType !== 1 || !hitMaps) {
     return null
   }
   return hitMaps.get(li) || null
@@ -856,7 +871,7 @@ function listSongs (hits, container, query) {
   hideButton.classList.add('youtube-genius-lyrics-results-container-hide-btn')
   hideButton.textContent = 'Hide'
   hideButton.addEventListener('click', function hideButtonClick (ev) {
-    hideLyrics()
+    hideLyricsWithMessage()
   })
 
   // List search results
@@ -1168,11 +1183,40 @@ if (document.location.hostname.startsWith('music')) {
   })
   if (isRobotsTxt === false) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
-    document.addEventListener('timeupdate', (ev) => {
+
+    function videoTimeUpdate (ev){
       if (genius.f.isScrollLyricsEnabled()) {
         if ((ev || 0).target.nodeName === 'VIDEO') updateAutoScroll()
       }
-    }, true)
+    }
+    document.addEventListener('genius-lyrics-actor', (ev) => {
+      const detail = (ev || 0).detail
+      const action = (detail || 0).action || ''
+      if (action === 'hideLyrics') {
+        hideLyricsWithMessage()
+      } else if (action === 'showLyrics') {
+        showLyricsButtonClicked()
+      }
+    })
+    window.addEventListener('message', function (e) {
+      let data = ((e || 0).data || 0)
+      if (data.iAm === custom.scriptName && data.type === 'lyricsDisplayState') {
+        let isScrollLyricsEnabled = false
+        if (data.visibility === 'loaded' && data.lyricsSuccess === true) {
+          isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()
+        }
+        if (data.visibility === 'hidden' || data.visibility === 'loaded') {
+          lyricsLoading = false
+        }else if (data.visibility === 'loading') {
+          lyricsLoading = true
+        }
+        if (isScrollLyricsEnabled === true) {
+          document.addEventListener('timeupdate', videoTimeUpdate, true)
+        } else {
+          document.removeEventListener('timeupdate', videoTimeUpdate, true)
+        }
+      }
+    })
     document.documentElement.classList.add('youtube-genius-lyrics')
   }
 }

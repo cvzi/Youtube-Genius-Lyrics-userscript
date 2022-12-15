@@ -674,13 +674,11 @@ function addLyrics (force, beLessSpecific) {
   } catch (e) {
     console.warn(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
     console.log(e)
+    const m = document.location.href.match(/v=(\w+)&?/)
     videoDetails = {
+      videoId: (m && m[1] ? m[1] : ''),
       keywords: [],
       shortDescription: ((document.getElementById('meta') || 0).textContent || '')
-    }
-    const m = document.location.href.match(/v=(\w+)&?/)
-    if (m && m[1]) {
-      videoDetails.videoId = m[1]
     }
   }
 
@@ -702,12 +700,13 @@ function addLyrics (force, beLessSpecific) {
     }
   }
 
-  if ('videoId' in videoDetails) {
-    if (lastVideoId === videoDetails.videoId + genius.option.themeKey && document.getElementById('lyricscontainer')) {
+  if (videoDetails.videoId) {
+    const tmpVideoId = `${videoDetails.videoId}${genius.option.themeKey}`
+    if (lastVideoId === tmpVideoId && document.getElementById('lyricscontainer')) {
       // Same video id and same theme and lyrics are showing -> stop here
       return
     } else {
-      lastVideoId = videoDetails.videoId + genius.option.themeKey
+      lastVideoId = tmpVideoId
     }
   } else {
     lastVideoId = null

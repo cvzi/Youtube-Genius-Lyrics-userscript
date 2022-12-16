@@ -308,7 +308,6 @@ function onResize () {
   lastResizeDT = tdt
   window.setTimeout(function () {
     if (tdt === lastResizeDT) {
-      genius.option.resizeOnNextRun = true
       resize()
     }
   }, 600)

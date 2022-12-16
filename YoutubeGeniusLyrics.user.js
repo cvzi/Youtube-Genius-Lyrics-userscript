@@ -1260,6 +1260,8 @@ if (document.location.hostname.startsWith('music')) {
         hideLyricsWithMessage()
       } else if (action === 'showLyrics') {
         showLyricsButtonClicked()
+      } else if (action === 'reloadCurrentLyrics') {
+        genius.f.reloadCurrentLyrics()
       }
     })
     window.addEventListener('message', function (e) {

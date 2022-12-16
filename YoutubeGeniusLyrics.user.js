@@ -668,7 +668,7 @@ function addLyrics (force, beLessSpecific) {
   let videoTitle = null
   let genre = null
   let isFamilySafe = null
-  
+
   // obtain the music info from modern meta panel
   ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
   if (ytdDescriptionInfo !== null) {

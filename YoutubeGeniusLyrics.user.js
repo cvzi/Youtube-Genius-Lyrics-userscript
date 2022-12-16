@@ -1097,10 +1097,24 @@ function main () {
   }
 }
 
+let isTriggered = false
+function executeMainWhenVisible (t) {
+  if (!isTriggered) {
+    requestAnimationFrame(() => {
+      if (isTriggered) return
+      setTimeout(() => {
+        if (isTriggered) return
+        isTriggered = true
+        main();
+      }, t)
+    })
+  }
+}
 function delayedMain () {
+  isTriggered = false
   // time allowed for other userscript(s) prepare the page
   // and also not block the page
-  setTimeout(main, 200)
+  executeMainWhenVisible(200)
 }
 
 function newAppHint (status) {
@@ -1216,7 +1230,7 @@ if (document.location.hostname.startsWith('music')) {
       // do nothing
     }
     : function setupMain () {
-      window.setTimeout(main, 600)
+      executeMainWhenVisible(600)
       document.removeEventListener('yt-navigate-finish', delayedMain, false)
       document.addEventListener('yt-navigate-finish', delayedMain, false)
     }

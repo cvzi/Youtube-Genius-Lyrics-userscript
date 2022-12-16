@@ -653,12 +653,12 @@ function addLyrics (force, beLessSpecific) {
   }
   lastVideoId = tmpVideoId
 
-  if (!ytdAppData || ytdAppData.page !=='watch') {
+  if (!ytdAppData || ytdAppData.page !== 'watch') {
     // Not a video page or video page not visible
     hideLyricsWithMessage()
     return
   }
-  
+
   let isMusic = false
   let ytdDescriptionInfo = null
   let videoTitle = null

@@ -1100,12 +1100,12 @@ function main () {
 let isTriggered = false
 function executeMainWhenVisible (t) {
   if (!isTriggered) {
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       if (isTriggered) return
       setTimeout(() => {
         if (isTriggered) return
         isTriggered = true
-        main();
+        main()
       }, t)
     })
   }

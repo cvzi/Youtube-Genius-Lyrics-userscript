@@ -265,6 +265,7 @@ function calcContainerWidthTop () {
   w = Math.min(window.innerWidth * 0.75, w)
 
   const top = getMastheadHeight()
+  const isTheatherView = !!document.querySelector('ytd-watch-flexy[theater]')
   if (isTheatherView) {
     return {
       top,
@@ -281,6 +282,10 @@ function calcContainerWidthTop () {
 }
 
 function setFrameDimensions (container, iframe, bar) {
+  if (!container || !iframe || !bar) {
+    console.warn('elements not found in setFrameDimensions()')
+    return
+  }
   // const bar = container.querySelector('.lyricsnavbar')
   // const width = iframe.style.width = container.clientWidth - 1 + 'px'
   // const height = iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
@@ -303,7 +308,6 @@ function onResize () {
   lastResizeDT = tdt
   window.setTimeout(function () {
     if (tdt === lastResizeDT) {
-      genius.option.resizeOnNextRun = true
       resize()
     }
   }, 600)
@@ -311,7 +315,6 @@ function onResize () {
 
 function resize () {
   const container = document.getElementById('lyricscontainer')
-  const iframe = document.getElementById('lyricsiframe')
 
   if (!container) {
     return
@@ -322,9 +325,12 @@ function resize () {
   container.style.top = `${top}px`
   container.style.width = `${width}px`
 
+  const iframe = document.getElementById('lyricsiframe')
   if (iframe) {
     const bar = container.querySelector('.lyricsnavbar')
-    setFrameDimensions(container, iframe, bar)
+    if (bar) {
+      setFrameDimensions(container, iframe, bar)
+    }
   }
 }
 
@@ -419,8 +425,6 @@ function addLyricsButton () {
 
 let lastVideoId = null
 let lastForceVideoId = null
-let isNormalView = false
-let isTheatherView = false
 let hitMaps = null
 
 function obtainDataCarouselLockups (ep) {
@@ -621,15 +625,6 @@ function newYtdDescriptionInfo (ytdDescriptionInfo) {
 }
 
 function addLyrics (force, beLessSpecific) {
-  const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
-  isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
-  isTheatherView = !!document.querySelector('ytd-watch-flexy div#player-theater-container video')
-  if (!h1 || (!isNormalView && !isTheatherView)) {
-    // Not a video page or video page not visible
-    hideLyricsWithMessage()
-    return
-  }
-
   let ytdAppData = null
   let videoDetails = null
   try {
@@ -661,28 +656,32 @@ function addLyrics (force, beLessSpecific) {
   }
   lastVideoId = tmpVideoId
 
+  if (!ytdAppData || ytdAppData.page !== 'watch') {
+    // Not a video page or video page not visible
+    hideLyricsWithMessage()
+    return
+  }
+
   let isMusic = false
   let ytdDescriptionInfo = null
   let videoTitle = null
   let genre = null
   let isFamilySafe = null
 
-  if (ytdAppData) {
-    ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
-    if (ytdDescriptionInfo !== null) {
-      isMusic = true
-    }
-    // videoTitle
-    try {
-      videoTitle = getSimpleText(ytdAppData.playerResponse.microformat.playerMicroformatRenderer.title)
-    } catch (e) {
-      videoTitle = h1.textContent.toLowerCase()
-    }
-    // genre
-    try {
-      genre = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.category
-    } catch (e) {}
+  // obtain the music info from modern meta panel
+  ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
+  if (ytdDescriptionInfo !== null) {
+    isMusic = true
   }
+  // videoTitle
+  try {
+    videoTitle = getSimpleText(ytdAppData.playerResponse.microformat.playerMicroformatRenderer.title)
+  } catch (e) { }
+  // genre
+  try {
+    genre = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.category
+  } catch (e) { }
+
   if (typeof videoTitle !== 'string') {
     return
   }
@@ -1098,6 +1097,12 @@ function main () {
   }
 }
 
+function delayedMain () {
+  // time allowed for other userscript(s) prepare the page
+  // and also not block the page
+  setTimeout(main, 200)
+}
+
 function newAppHint (status) {
   // TODO should this be removed in favor of a README hint in the next version?
   if (document.location.pathname === '/robots.txt') {
@@ -1212,8 +1217,8 @@ if (document.location.hostname.startsWith('music')) {
     }
     : function setupMain () {
       window.setTimeout(main, 600)
-      document.removeEventListener('yt-navigate-finish', main, false)
-      document.addEventListener('yt-navigate-finish', main, false)
+      document.removeEventListener('yt-navigate-finish', delayedMain, false)
+      document.addEventListener('yt-navigate-finish', delayedMain, false)
     }
 
   // should it be required for robots.txt as well?? can remove??

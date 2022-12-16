@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.7.0
+// @version         10.7.1
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1260,6 +1260,8 @@ if (document.location.hostname.startsWith('music')) {
         hideLyricsWithMessage()
       } else if (action === 'showLyrics') {
         showLyricsButtonClicked()
+      } else if (action === 'reloadCurrentLyrics') {
+        genius.f.reloadCurrentLyrics()
       }
     })
     window.addEventListener('message', function (e) {

@@ -621,14 +621,6 @@ function newYtdDescriptionInfo (ytdDescriptionInfo) {
 }
 
 function addLyrics (force, beLessSpecific) {
-  const h1 = document.querySelector('#content ytd-watch-flexy:not([hidden]) #container .title')
-  isNormalView = !!document.querySelector('ytd-watch-flexy div#primary video')
-  isTheatherView = !!document.querySelector('ytd-watch-flexy div#player-theater-container video')
-  if (!h1 || (!isNormalView && !isTheatherView)) {
-    // Not a video page or video page not visible
-    hideLyricsWithMessage()
-    return
-  }
 
   let ytdAppData = null
   let videoDetails = null
@@ -661,28 +653,32 @@ function addLyrics (force, beLessSpecific) {
   }
   lastVideoId = tmpVideoId
 
+  if (!ytdAppData || ytdAppData.page !=='watch') {
+    // Not a video page or video page not visible
+    hideLyricsWithMessage()
+    return
+  }
+  
   let isMusic = false
   let ytdDescriptionInfo = null
   let videoTitle = null
   let genre = null
   let isFamilySafe = null
-
-  if (ytdAppData) {
-    ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
-    if (ytdDescriptionInfo !== null) {
-      isMusic = true
-    }
-    // videoTitle
-    try {
-      videoTitle = getSimpleText(ytdAppData.playerResponse.microformat.playerMicroformatRenderer.title)
-    } catch (e) {
-      videoTitle = h1.textContent.toLowerCase()
-    }
-    // genre
-    try {
-      genre = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.category
-    } catch (e) {}
+  
+  // obtain the music info from modern meta panel
+  ytdDescriptionInfo = getMusicTitleAndAuthor(ytdAppData)
+  if (ytdDescriptionInfo !== null) {
+    isMusic = true
   }
+  // videoTitle
+  try {
+    videoTitle = getSimpleText(ytdAppData.playerResponse.microformat.playerMicroformatRenderer.title)
+  } catch (e) {}
+  // genre
+  try {
+    genre = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.category
+  } catch (e) {}
+  
   if (typeof videoTitle !== 'string') {
     return
   }
@@ -1098,6 +1094,12 @@ function main () {
   }
 }
 
+function delayedMain () {
+  // time allowed for other userscript(s) prepare the page
+  // and also not block the page
+  setTimeout(main, 200)
+}
+
 function newAppHint (status) {
   // TODO should this be removed in favor of a README hint in the next version?
   if (document.location.pathname === '/robots.txt') {
@@ -1212,8 +1214,8 @@ if (document.location.hostname.startsWith('music')) {
     }
     : function setupMain () {
       window.setTimeout(main, 600)
-      document.removeEventListener('yt-navigate-finish', main, false)
-      document.addEventListener('yt-navigate-finish', main, false)
+      document.removeEventListener('yt-navigate-finish', delayedMain, false)
+      document.addEventListener('yt-navigate-finish', delayedMain, false)
     }
 
   // should it be required for robots.txt as well?? can remove??

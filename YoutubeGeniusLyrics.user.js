@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.7.1
+// @version         10.7.2
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1097,10 +1097,24 @@ function main () {
   }
 }
 
+let isTriggered = false
+function executeMainWhenVisible (t) {
+  if (!isTriggered) {
+    window.requestAnimationFrame(() => {
+      if (isTriggered) return
+      setTimeout(() => {
+        if (isTriggered) return
+        isTriggered = true
+        main()
+      }, t)
+    })
+  }
+}
 function delayedMain () {
+  isTriggered = false
   // time allowed for other userscript(s) prepare the page
   // and also not block the page
-  setTimeout(main, 200)
+  executeMainWhenVisible(200)
 }
 
 function newAppHint (status) {
@@ -1216,7 +1230,7 @@ if (document.location.hostname.startsWith('music')) {
       // do nothing
     }
     : function setupMain () {
-      window.setTimeout(main, 600)
+      executeMainWhenVisible(600)
       document.removeEventListener('yt-navigate-finish', delayedMain, false)
       document.addEventListener('yt-navigate-finish', delayedMain, false)
     }

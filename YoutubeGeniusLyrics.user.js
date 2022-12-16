@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.6.7
+// @version         10.7.0
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -44,36 +44,6 @@
 
 let genius
 const SCRIPT_NAME = 'Youtube Genius Lyrics'
-const musicKeywords = [
-  'music', 'musik', 'album', 'single',
-  'hiphop', 'hip-hop', 'hip hop', 'rap',
-  'rnb', 'r\'n\'n', 'r&b',
-  'dance',
-  'reggae',
-  'folk',
-  'indie',
-  'metal',
-  'pop',
-  'punk',
-  'rock'
-]
-const musicDescriptors = [
-  'Music video',
-  'Music Group',
-  'Composer',
-  'Lyricist',
-  'full track',
-  'vevo.ly',
-  'Provided to YouTube by ',
-  'Columbia Records',
-  'Sony Music',
-  'track produced by',
-  'song produced by',
-  'new ep',
-  'new album',
-  'new track',
-  '.lnk.to/'
-]
 
 let lyricsDisplayState = 'hidden'
 
@@ -329,7 +299,7 @@ function setFrameDimensions (container, iframe, bar) {
 
 let lastResizeDT = 0
 function onResize () {
-  let tdt = Date.now()
+  const tdt = Date.now()
   lastResizeDT = tdt
   window.setTimeout(function () {
     if (tdt === lastResizeDT) {
@@ -393,16 +363,16 @@ function hideLyrics () {
     elementsToBeRemoved.push(lyricscontainer)
     document.documentElement.removeAttribute('youtube-genius-lyrics-container')
   }
-  let isHiding = elementsToBeRemoved.length>0
+  const isHiding = elementsToBeRemoved.length > 0
   removeElements(elementsToBeRemoved)
   addLyricsButton()
   return isHiding
 }
 
-function hideLyricsWithMessage () {
+function hideLyricsWithMessage() {
   const ret = hideLyrics(...arguments)
-  if(ret === false){
-      return false
+  if (ret === false) {
+    return false
   }
   window.postMessage({ iAm: SCRIPT_NAME, type: 'lyricsDisplayState', visibility: 'hidden' }, '*')
   return ret
@@ -720,7 +690,7 @@ function addLyrics (force, beLessSpecific) {
   console.log(`Youtube Genius Lyrics - Genre "${genre}" is found`)
   if (ytdDescriptionInfo === null) {
     if (genre === 'Music') {
-      isMusic = true;
+      isMusic = true
     }
   }
 
@@ -910,7 +880,7 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) {
     backbutton.textContent = `Back to search (${searchresultsLengths - 1} other result${searchresultsLengths === 2 ? '' : 's'})`
     // }
     backbutton.addEventListener('click', function backbuttonClick (ev) {
-      custom.showSearchField(genius.current.artists + ' ' + genius.current.title)
+      showSearchField(genius.current.artists + ' ' + genius.current.title)
     })
     elementsToBeAppended.push(separator.cloneNode(true), backbutton)
   }

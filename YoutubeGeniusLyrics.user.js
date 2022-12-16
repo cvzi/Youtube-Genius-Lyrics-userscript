@@ -369,7 +369,7 @@ function hideLyrics () {
   return isHiding
 }
 
-function hideLyricsWithMessage() {
+function hideLyricsWithMessage () {
   const ret = hideLyrics(...arguments)
   if (ret === false) {
     return false

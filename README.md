@@ -12,10 +12,10 @@ General information about userscripts and how to use them can be found at [openu
 Tested with Firefox/**Tampermonkey** and Chrome/**Tampermonkey**.
 
 ### Navigation Links:
-[Github - Youtube Genius Lyrics Userscript](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript)
-[Github - Genius Lyrics Userscript (Library)](https://github.com/cvzi/genius-lyrics-userscript/)
-[Greasyfork - Youtube Genius Lyrics Userscript](https://greasyfork.org/en/scripts/386259-youtube-genius-lyrics)
-[Greasyfork - Genius Lyrics Userscript (Library)](https://greasyfork.org/en/scripts/406698-geniuslyrics)
+*   [Github - Youtube Genius Lyrics Userscript](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript)
+*   [Github - Genius Lyrics Userscript (Library)](https://github.com/cvzi/genius-lyrics-userscript/)
+*   [Greasyfork - Youtube Genius Lyrics Userscript](https://greasyfork.org/en/scripts/386259-youtube-genius-lyrics)
+*   [Greasyfork - Genius Lyrics Userscript (Library)](https://greasyfork.org/en/scripts/406698-geniuslyrics)
 
 ### Contributors:
 [![Contributors](https://contrib.rocks/image?repo=cvzi/Youtube-Genius-Lyrics-userscript)](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/graphs/contributors)

@@ -265,6 +265,7 @@ function calcContainerWidthTop () {
   w = Math.min(window.innerWidth * 0.75, w)
 
   const top = getMastheadHeight()
+  const isTheatherView = !!document.querySelector('ytd-watch-flexy[theater]')
   if (isTheatherView) {
     return {
       top,
@@ -281,6 +282,10 @@ function calcContainerWidthTop () {
 }
 
 function setFrameDimensions (container, iframe, bar) {
+  if (!container || !iframe || !bar) {
+    console.warn('elements not found in setFrameDimensions()')
+    return
+  }
   // const bar = container.querySelector('.lyricsnavbar')
   // const width = iframe.style.width = container.clientWidth - 1 + 'px'
   // const height = iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
@@ -311,7 +316,6 @@ function onResize () {
 
 function resize () {
   const container = document.getElementById('lyricscontainer')
-  const iframe = document.getElementById('lyricsiframe')
 
   if (!container) {
     return
@@ -322,9 +326,12 @@ function resize () {
   container.style.top = `${top}px`
   container.style.width = `${width}px`
 
+  const iframe = document.getElementById('lyricsiframe')
   if (iframe) {
     const bar = container.querySelector('.lyricsnavbar')
-    setFrameDimensions(container, iframe, bar)
+    if (bar) {
+      setFrameDimensions(container, iframe, bar)
+    }
   }
 }
 
@@ -419,8 +426,6 @@ function addLyricsButton () {
 
 let lastVideoId = null
 let lastForceVideoId = null
-let isNormalView = false
-let isTheatherView = false
 let hitMaps = null
 
 function obtainDataCarouselLockups (ep) {
@@ -621,7 +626,6 @@ function newYtdDescriptionInfo (ytdDescriptionInfo) {
 }
 
 function addLyrics (force, beLessSpecific) {
-
   let ytdAppData = null
   let videoDetails = null
   try {
@@ -673,12 +677,12 @@ function addLyrics (force, beLessSpecific) {
   // videoTitle
   try {
     videoTitle = getSimpleText(ytdAppData.playerResponse.microformat.playerMicroformatRenderer.title)
-  } catch (e) {}
+  } catch (e) { }
   // genre
   try {
     genre = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.category
-  } catch (e) {}
-  
+  } catch (e) { }
+
   if (typeof videoTitle !== 'string') {
     return
   }

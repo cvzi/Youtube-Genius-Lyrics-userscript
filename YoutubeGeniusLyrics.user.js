@@ -1417,7 +1417,7 @@ if (document.location.hostname.startsWith('music')) {
       genius.style.setup = () => {
         genius.style.setup = null // run once; set variables to genius.styleProps
 
-        if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') return
+        if (genius.option.themeKey !== 'genius' && genius.option.themeKey !== 'geniusReact') return false
 
         const ytdApp = document.querySelector('ytd-app')
         if (!ytdApp) return
@@ -1460,6 +1460,7 @@ if (document.location.hostname.startsWith('music')) {
           '--ygl-font-size': (fontSize === null ? '' : `${fontSize}`),
           '--ygl-infobox-background': (slbc === null ? '' : `${slbc}`)
         })
+        return true
       }
     }
 

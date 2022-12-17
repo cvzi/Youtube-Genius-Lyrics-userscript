@@ -1472,7 +1472,8 @@ if (document.location.hostname.startsWith('music')) {
       shortenArtistName: true,
       fixArtistName: true,
       removeStats: true,
-      noRelatedLinks: true
+      noRelatedLinks: true,
+      onlyCompleteLyrics: true
     })
     genius.option.cacheHTMLRequest = false // 1 lyrics page consume 2XX KB
 

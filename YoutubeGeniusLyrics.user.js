@@ -740,9 +740,9 @@ function updateAutoScroll (video) {
   }
   if (pos !== null && pos >= 0 && lastPos !== pos) {
     lastPos = pos
-    let ct = video.currentTime
+    const ct = video.currentTime
     setTimeout(() => {
-      let ct1 = video.currentTime
+      const ct1 = video.currentTime
       if (ct1 - ct < 50 / 1000 && ct1 > ct) {
         genius.f.scrollLyrics(ct1 / video.duration)
       }
@@ -923,7 +923,7 @@ function getHitOfElement (li) {
 function formatPageViews (stats) {
   if (!stats) return null
   if (typeof stats.pageviews === 'number') {
-    return genius.f.metricPrefix(hit.result.stats.pageviews, 1)
+    return genius.f.metricPrefix(stats.pageviews, 1)
   }
   return null
 }
@@ -1103,17 +1103,17 @@ function iframeLoadedCallback2 (res) {
 function textSlash (text) {
   // Create a set object which contains the information of the title
   text = text
-    .replace(/\b([a-z0-9A-Z]+)[\-\:\~\+]([a-z0-9A-Z]+)\b/, '$1$3')
+    .replace(/\b([a-z0-9A-Z]+)[:~\-+]([a-z0-9A-Z]+)\b/, '$1$3')
     .replace(/[\uFF01-\uFF5E]/g, (m) => {
       // Halfwidth and Fullwidth Forms
       return String.fromCharCode(m.charCodeAt(0) - 65248)
     })
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
-    .replace(/[\s\/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') // spacing
+    .replace(/[\s/\x09-\x0d\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') // spacing
     .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, '/') // Symbols and Punctuation
     .replace(/\/+/g, '/')
   let s = text.split('/')
-  let r = new Set()
+  const r = new Set()
   for (let t of s) {
     if (t && t.length > 0) {
       t = t.toLowerCase()
@@ -1131,7 +1131,7 @@ function autoSelectLyrics (hits) {
   // to search the lyrics, use the short title
   // to figure out which one is the most correct one, use full / featured title
 
-  let ytdApp = document.querySelector('ytd-app')
+  const ytdApp = document.querySelector('ytd-app')
   let ytdAppData = null
   let videoDetails = null
   if (!ytdApp) return
@@ -1150,17 +1150,17 @@ function autoSelectLyrics (hits) {
   // console.log(videoDetails)
   // console.log(videoTitle, textSlash(videoTitle))
 
-  const slash_videoTitle = textSlash(`${videoTitle}\n${videoDetails.author || ''}`)
+  const slashVideoTitle = textSlash(`${videoTitle}\n${videoDetails.author || ''}`)
   let automaticHit = null
 
   for (const hit of hits) {
     const result = hit.result || 0
     const fTitle = result.full_title || result.title_with_featured || result.title
     if (!fTitle || typeof fTitle !== 'string') continue
-    const slahs_fTitle = textSlash(`${fTitle}\n${result.artist_names || ''}`)
+    const slashFTitle = textSlash(`${fTitle}\n${result.artist_names || ''}`)
     let score = 0
-    for (const key of slahs_fTitle.keys()) {
-      if (slash_videoTitle.has(key)) score++
+    for (const key of slashFTitle.keys()) {
+      if (slashVideoTitle.has(key)) score++
     }
     hit._matchScore = score
     if (automaticHit === null || hit._matchScore > automaticHit._matchScore) {
@@ -1270,7 +1270,6 @@ function newAppHint (status) {
       `
       document.head.appendChild(style)
     }
-
 
     const container = document.createElement('div')
     container.id = 'newapphint785'
@@ -1420,47 +1419,35 @@ if (document.location.hostname.startsWith('music')) {
 
         if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') return
 
-        let ytdApp = document.querySelector('ytd-app')
+        const ytdApp = document.querySelector('ytd-app')
         if (!ytdApp) return
 
-        let cStyle = window.getComputedStyle(ytdApp)
+        const cStyle = window.getComputedStyle(ytdApp)
         let background = cStyle.getPropertyValue('--yt-spec-base-background')
         let color = cStyle.getPropertyValue('--yt-spec-text-primary')
-        //let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
-        //let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
+        // let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
+        // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
         let fontSize = null
         let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
 
-        let expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
+        const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
         if (expander) {
-          fontSize = getComputedStyle(expander).fontSize
+          fontSize = window.getComputedStyle(expander).fontSize
         } else {
           fontSize = cStyle.fontSize
         }
-        if (typeof background == 'string' && typeof color == 'string' && background.length > 3 && color.length > 3) {
+        if (typeof background === 'string' && typeof color === 'string' && background.length > 3 && color.length > 3) {
           // do nothing
         } else {
           background = null
           color = null
         }
 
-        if (typeof fontSize == 'string' && fontSize.length > 2) {
+        if (typeof fontSize === 'string' && fontSize.length > 2) {
           // do nothing
         } else {
           fontSize = null
         }
-        /*
-                if (typeof bbp == 'string') {
-        
-                } else {
-                  bbp = null;
-                }
-                if (typeof cfs === 'string') {
-
-                } else {
-                  cfs = null;
-                }
-                */
         if (typeof slbc === 'string') {
           // do nothing
         } else {
@@ -1476,7 +1463,7 @@ if (document.location.hostname.startsWith('music')) {
       }
     }
 
-    Object.assign(genius.minimizeHit,{
+    Object.assign(genius.minimizeHit, {
       noImageURL: true,
       noFeaturedArtists: true,
       simpleReleaseDate: true,

@@ -1109,7 +1109,7 @@ function textSlash (text) {
       return String.fromCharCode(m.charCodeAt(0) - 65248)
     })
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
-    .replace(/[\s/\x09-\x0d\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') // spacing
+    .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') // spacing // eslint-disable-line no-control-regex
     .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, '/') // Symbols and Punctuation
     .replace(/\/+/g, '/')
   let s = text.split('/')

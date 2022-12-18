@@ -38,7 +38,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, geniusLyrics */ // eslint-disable-line no-unused-vars
+/* global GM, genius, geniusLyrics, top */ // eslint-disable-line no-unused-vars
 
 'use strict'
 
@@ -1330,7 +1330,13 @@ if (document.location.hostname.startsWith('music')) {
     window.setTimeout(() => newAppHint(status), 5000)
   })
 } else {
+  let isInIframe = null
+  try {
+    isInIframe = top && window && top.constructor.name === 'Window' && window.constructor.name === 'Window' && top !== window
+  } catch (e) { }
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
+  if (isInIframe === true && isRobotsTxt === false) return // other iframes
+
   const setupMain = isRobotsTxt
     ? function setupMain () {
       // do nothing
@@ -1472,8 +1478,7 @@ if (document.location.hostname.startsWith('music')) {
       shortenArtistName: true,
       fixArtistName: true,
       removeStats: true,
-      noRelatedLinks: true,
-      onlyCompleteLyrics: true
+      noRelatedLinks: true
     })
     genius.option.cacheHTMLRequest = false // 1 lyrics page consume 2XX KB
 

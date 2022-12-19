@@ -1168,7 +1168,7 @@ function addLyrics (force, beLessSpecific) {
 
     const pageSongInfoRes = getPageSongInfo(ytdAppData, videoDetails)
     if (!pageSongInfoRes) return
-    let {songTitle, songArtistsArr, isMusic} = pageSongInfoRes
+    let { songTitle, songArtistsArr, isMusic } = pageSongInfoRes
     if (force) {
       isMusic = true
       lastForceVideoId = lastVideoId
@@ -1176,7 +1176,7 @@ function addLyrics (force, beLessSpecific) {
       genius.f.hideLyricsWithMessage()
       return
     }
-  
+
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   } catch (e) {

@@ -1891,7 +1891,6 @@ if (document.location.hostname.startsWith('music')) {
     isInIframe = top && window && top.constructor.name === 'Window' && window.constructor.name === 'Window' && top !== window
   }catch(e){}
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
-  if (isInIframe && !isRobotsTxt) return
 
   const setupMain = isRobotsTxt
     ? function setupMain () {
@@ -1903,32 +1902,37 @@ if (document.location.hostname.startsWith('music')) {
       document.addEventListener('yt-navigate-finish', delayedMain, false)
     }
 
-  // should it be required for robots.txt as well?? can remove??
-  genius = geniusLyrics({
-    GM,
-    scriptName: SCRIPT_NAME,
-    scriptIssuesURL: 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
-    scriptIssuesTitle: 'Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
-    domain: 'https://www.youtube.com/',
-    emptyURL: 'https://www.youtube.com/robots.txt',
-    main,
-    setupMain,
-    addCss,
-    getHitOfElement,
-    listSongs,
-    showSearchField,
-    setupLyricsDisplayDOM,
-    addLyrics,
-    hideLyrics,
-    getCleanLyricsContainer,
-    setFrameDimensions,
-    onResize,
-    createSpinner,
-    customSpinnerDOM,
-    iframeLoadedCallback1,
-    iframeLoadedCallback2,
-    autoSelectLyrics
-  })
+  if (isInIframe && !isRobotsTxt) {
+    // do nothing
+  } else {
+    // should it be required for robots.txt as well?? can remove??
+    genius = geniusLyrics({
+      GM,
+      scriptName: SCRIPT_NAME,
+      scriptIssuesURL: 'https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
+      scriptIssuesTitle: 'Report problem: github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues',
+      domain: 'https://www.youtube.com/',
+      emptyURL: 'https://www.youtube.com/robots.txt',
+      main,
+      setupMain,
+      addCss,
+      getHitOfElement,
+      listSongs,
+      showSearchField,
+      setupLyricsDisplayDOM,
+      addLyrics,
+      hideLyrics,
+      getCleanLyricsContainer,
+      setFrameDimensions,
+      onResize,
+      createSpinner,
+      customSpinnerDOM,
+      iframeLoadedCallback1,
+      iframeLoadedCallback2,
+      autoSelectLyrics
+    })
+  }
+
   if (isRobotsTxt === false) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
 

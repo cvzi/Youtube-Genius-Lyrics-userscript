@@ -38,7 +38,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, geniusLyrics */ // eslint-disable-line no-unused-vars, no-redeclare
+/* global GM, genius, geniusLyrics, top */ // eslint-disable-line no-unused-vars, no-redeclare
 
 'use strict'
 
@@ -775,7 +775,7 @@ function resize () {
   const { top, width } = calcContainerWidthTop()
 
   container.style.top = `${top}px`
-  container.style.setProperty('--ygl-container-width',`${width}px`)
+  container.style.setProperty('--ygl-container-width', `${width}px`)
 
   // const iframe = document.getElementById('lyricsiframe')
   // if (iframe) {
@@ -815,9 +815,9 @@ function getCleanLyricsContainer () {
   return result
 }
 
-function hideLyrics() {
+function hideLyrics () {
   if (document.querySelector('.loadingspinnerholder') !== null) {
-    genius.f.cancelLoading();
+    genius.f.cancelLoading()
   }
   const elementsToBeRemoved = [...document.querySelectorAll('.loadingspinnerholder')]
   const lyricscontainer = document.getElementById('lyricscontainer')
@@ -851,8 +851,6 @@ function addLyricsButton () {
     showLyricsButtonClicked()
   })
   document.body.appendChild(b)
-  
-
 }
 
 let lastVideoId = null
@@ -991,13 +989,13 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 
   // song title text processing
   songTitle = songTitle
-  .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
-  .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
+    .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
+    .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
   // .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, ' ') // Symbols and Punctuation
 
   // Symbols and Punctuation can be part of the artist name (e.g. &TEAM, milli-billi)
 
-  songTitle = songTitle.replace(/\s+/,' ')
+  songTitle = songTitle.replace(/\s+/, ' ')
   songTitle = simpleTextFixup(songTitle)
   songTitle = songTitle.replace(/\(.+?\)/g, '')
   songTitle = songTitle.replace(/\[.+?\]/g, '')
@@ -1057,11 +1055,16 @@ function newYtdDescriptionInfo (ytdDescriptionInfo) {
   return { songTitle, songArtistsArr }
 }
 
+function getYtdAppData () {
+  const ytdApp = document.querySelector('ytd-app')
+  return (ytdApp.__data || 0).data || ytdApp.data || null
+}
+
 function isYtdAppReady () {
   let ytdAppData = null
   let videoDetails = null
   try {
-    ytdAppData = document.querySelector('ytd-app').__data.data
+    ytdAppData = getYtdAppData()
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
       videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
     } else {
@@ -1076,7 +1079,7 @@ function getPageInfo () {
   let ytdAppData = null
   let videoDetails = null
   try {
-    ytdAppData = document.querySelector('ytd-app').__data.data
+    ytdAppData = getYtdAppData()
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
       videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
     } else {
@@ -1096,8 +1099,6 @@ function getPageInfo () {
 }
 
 function getPageSongInfo (ytdAppData, videoDetails) {
-
-
   let isMusic = false
   let ytdDescriptionInfo = null
   let videoTitle = null
@@ -1132,16 +1133,16 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   // isFamilySafe
   try {
     isFamilySafe = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.isFamilySafe
-  } catch (e) {}
+  } catch (e) { }
   if (isFamilySafe === false) return
 
   const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
     ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
     : newYtdDescriptionInfo(ytdDescriptionInfo)
 
-    return { songTitle, songArtistsArr, isMusic } 
+  return { songTitle, songArtistsArr, isMusic }
 }
- 
+
 function addLyrics (force, beLessSpecific) {
   try {
     const pageInfo = getPageInfo()
@@ -1178,7 +1179,7 @@ function addLyrics (force, beLessSpecific) {
   
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
-  }catch(e){
+  } catch (e) {
     // do nothing
   }
 }
@@ -1239,6 +1240,7 @@ async function performSearch () {
         if (c !== null) {
           c.classList.remove('lyrics-searching')
         }
+        c = null
       })
     } else {
       input.classList.add('lyrics-input-noresult')
@@ -1351,7 +1353,7 @@ function onLyricsFoundHideBtnClick (ev) {
 
 function onLyricsFoundBackToSearchClick (ev) {
   if (document.querySelector('.loadingspinnerholder') !== null) {
-    genius.f.cancelLoading();
+    genius.f.cancelLoading()
   }
   genius.f.forgetLyricsSelection(genius.current.title, genius.current.artists)
   showSearchField()
@@ -1510,10 +1512,9 @@ function listSongs (hits, container, query) {
   tracklistOL.classList.add('youtube-genius-lyrics-results-tracklist')
   tracklistOL.addEventListener('click', onLyricsResultsTrackListClick, true)
 
-
   let autoHit = autoSelectLyrics(hits) // setup _matchSource
   if (autoHit) autoHit = autoHit.hit
-  let isTopResultBeingAutoHit = autoHit === hits[0]
+  const isTopResultBeingAutoHit = autoHit === hits[0]
 
   // prepare results
   const liArr = hits.map(function hitsMap (hit) {
@@ -1639,9 +1640,7 @@ function customSpinnerDOM (container, bar, iframe) {
     }
   }
   return spinnerDOM
-
 }
-
 
 function iframeLoadedCallback1 (res) {
   lyricsDisplayState = 'loaded'
@@ -1687,7 +1686,7 @@ function autoSelectLyrics (hits) {
   let videoDetails = null
   if (!ytdApp) return
 
-  ytdAppData = document.querySelector('ytd-app').__data.data
+  ytdAppData = getYtdAppData()
   if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
     videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
   } else {
@@ -1734,17 +1733,17 @@ function main () {
     return
   }
 
-  let ytdApp = document.querySelector('ytd-app')
-  let ytdAppData = ytdApp.__data.data
-  if(!ytdAppData){
+  let ytdAppData = getYtdAppData()
+  if (!ytdAppData) {
     // the status is unknown
     return
-  } else if(ytdAppData.page !=='watch' || !isYtdAppReady()) {
+  } else if (ytdAppData.page !== 'watch' || !isYtdAppReady()) {
     // ytdApp is initized but the pagetype or video info not exist
     // (youtube web app page to 'search' or 'browse')
     genius.f.hideLyricsWithMessage()
     return
   }
+  ytdAppData = null
 
   if (genius.option.autoShow) {
     addLyrics()
@@ -1887,9 +1886,9 @@ if (document.location.hostname.startsWith('music')) {
   })
 } else {
   let isInIframe = null
-  try{
+  try {
     isInIframe = top && window && top.constructor.name === 'Window' && window.constructor.name === 'Window' && top !== window
-  }catch(e){}
+  } catch (e) { }
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
 
   const setupMain = isRobotsTxt
@@ -1961,7 +1960,7 @@ if (document.location.hostname.startsWith('music')) {
       if (data.iAm === SCRIPT_NAME && data.type === 'lyricsDisplayState') {
         let isScrollLyricsEnabled = false
         if (data.visibility !== 'loading') {
-          let c = document.querySelector('#lyricscontainer.youtube-genius-lyrics-loading-container')
+          const c = document.querySelector('#lyricscontainer.youtube-genius-lyrics-loading-container')
           if (c) {
             c.classList.remove('youtube-genius-lyrics-loading-container')
             if (data.visibility === 'loaded') {
@@ -2011,7 +2010,7 @@ if (document.location.hostname.startsWith('music')) {
         // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
         let fontSize = null
         let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
-        let linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
+        const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
 
         const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
         if (expander) {

@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.8.0
+// @version         10.9.0
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -38,7 +38,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, geniusLyrics, top */ // eslint-disable-line no-unused-vars
+/* global GM, genius, geniusLyrics */ // eslint-disable-line no-unused-vars, no-redeclare
 
 'use strict'
 
@@ -56,7 +56,16 @@ function addCss () {
     #myconfigwin39457845 {
       z-index: 2060 !important;
     }
+    
+    html {
+      /* allow modification from external */
+      --ygl-container-right: var(--ytd-margin-6x, 4px);
+      --ygl-container-default-padding: 2px 6px;
+      --ygl-spinner-color: rgb(255, 255, 100);
+    }
+    
     #lyricscontainer {
+      box-sizing: border-box;
       position: fixed;
       right: 0;
       margin: 0px;
@@ -64,113 +73,212 @@ function addCss () {
       background-color: white;
       z-index: 2001;
       font-size: 1.4rem;
-      border: none;
-      border-radius: none;
+      border: 0;
+      border-radius: 0;
+    
+      background: var(--ytd-searchbox-background);
+      color: var(--ytd-searchbox-text-color);
+      border: 1px solid var(--ytd-searchbox-legacy-border-color);
+      padding: var(--ygl-container-default-padding);
+      /* overrided by found/loading */
+      line-height: 100%;
+    
+      width: calc(var(--ygl-container-width, 324px) - var(--ytd-margin-6x, 24px) + 7px);
+      right: calc(var(--ygl-container-right) - 1px);
     }
+    
     #lyricsiframe {
       opacity: 0.1;
       transition: opacity 2s;
       margin: 0;
       padding: 0;
     }
+    
     .lyricsnavbar {
-      font-size : 0.7em;
+      font-size: 0.83em;
       text-align: right;
       padding-right: 10px;
       background-color: #fafafa;
-     }
-    .lyricsnavbar span, .lyricsnavbar a:link, .lyricsnavbar a:visited  {
-      color: #606060;
+      background: transparent;
+      color: inherit;
+      display: flex;
+      user-select: none;
+      flex-direction: row;
+      justify-content: end;
+      align-items: center;
+      align-items: stretch;
+    }
+    
+    .lyricsnavbar span {
+      color: var(--yt-live-chat-primary-text-color);
       text-decoration: none;
       transition: color 400ms;
-     }
-    .lyricsnavbar a:hover, .lyricsnavbar span:hover {
-      color: #9026e0;
+    }
+    
+    .lyricsnavbar span:hover {
+      color: var(--yt-live-chat-toast-action-color);
       text-decoration: none;
     }
-    .loadingspinner {
-      color: black;
+    
+    body .loadingspinner {
+      /* override .loadingspinner */
+      color: currentColor;
       font-size: 1em;
       line-height: 2.5em;
+      --ygl-spinner-border-color: var(--yt-live-chat-secondary-text-color, #181818);
+      border-color: var(--ygl-spinner-color) var(--ygl-spinner-border-color) var(--ygl-spinner-border-color) var(--ygl-spinner-border-color);
     }
+    
     .loadingspinnerholder {
       z-index: 2050;
-      background-color: white;
-      position: absolute;
-      top: 56px;
-      right: 100px;
+      background-color: inherit;
       cursor: progress;
     }
+    
+    .lorem br {
+      height: 0px;
+      line-height: 0;
+      font-size: 0;
+      padding: 0;
+      margin: 0;
+    }
+    
     .lorem {
+      --ygl-lorem-gray: var(--yt-live-chat-disabled-icon-button-color);
       padding: 10px 0px 0px 15px;
       font-size: 1.4rem;
       line-height: 2.2rem;
       letter-spacing: 0.3rem;
       user-select: none !important;
       pointer-events: none !important;
+      width: 100%;
     }
+    
+    /* this is only supported in modern browsers */
+    @property --num {
+      syntax: '<integer>';
+      initial-value: 0;
+      inherits: false;
+    }
+    
+    @keyframes loadingLorem {
+      0% {
+        --num: 0;
+      }
+    
+      99% {
+        --num: 8;
+      }
+    
+      100% {
+        --num: 0;
+      }
+    }
+    
+    .lorem-scroll {
+      --num: 0;
+      animation: loadingLorem 4s ease infinite;
+      margin-top: calc(-13rem - 2rem*var(--num, 0));
+      contain: content;
+      width: 96%;
+      overflow: hidden;
+    }
+    
     .lorem .white {
-      background-color: white;
+      background-color: inherit;
       color: white;
       user-select: none !important;
     }
+    
     .lorem .gray {
-      background-color: #cccccc;
-      color: #cccccc;
+      background-color: var(--ygl-lorem-gray);
+      color: transparent;
       user-select: none !important;
     }
+    
     #showlyricsbutton {
       position: absolute;
       z-index: 3000;
-      right: 0px;
-      color: #ffff64;
+      right: 4px;
       cursor: pointer;
-      background-color: #000a;
       border-radius: 50%;
       margin: auto;
       padding: 0px 1px;
       text-align: center;
       font-size: 15px;
       line-height: 14px;
+    
+      background: #ffff64;
+      color: #000a;
+      padding: 9px;
+      display: flex;
+      align-content: center;
+      align-items: center;
+      justify-content: center;
+      contain: strict;
+      opacity: 0.7;
+      transition: opacity 50ms;
+    
+      /*
+        --ytd-masthead-height
+        --ytd-toolbar-height 
+        --ytd-watch-flexy-masthead-height
+        */
+      top: var(--ytd-toolbar-height, var(--ytd-masthead-height, var(--ytd-watch-flexy-masthead-height, 56px)));
+    
     }
-    #showlyricsbutton.youtube-genius-lyrics-button-g-small {
-      background-color:#0008;
-      border-radius: 100%;
-      top: 0px;
-      border:2px solid #ffff64;
-      padding: 0px 3px;
-      font-size: 12px;
+    
+    #showlyricsbutton:hover {
+      opacity: 1.0;
     }
+    
+    /* :fullscreen shall be sufficient for modern browsers */
+    /* see more at https://caniuse.com/mdn-css_selectors_fullscreen */
+    
+    :fullscreen #showlyricsbutton {
+      display: none;
+    }
+    
+    :-moz-full-screen #showlyricsbutton {
+      display: none;
+    }
+    
+    :-webkit-full-screen #showlyricsbutton {
+      display: none;
+    }
+    
+    #showlyricsbutton::before {
+      color: inherit;
+      content: 'G';
+      position: absolute;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      touch-action: none;
+    }
+    
     .youtube-genius-lyrics-search-container {
       border: 1px solid black;
       border-radius: 3px;
-      padding: 5px;
-      padding-right: 15px;
+      --ygl-lyricscontainer-padding: 0px 10px;
     }
-    span.youtube-genius-lyrics-search-container-span {
-      cursor:pointer;
-      vertical-align: middle;
-    }
-    span.youtube-genius-lyrics-search-container-hide-btn {
-      cursor:pointer;
-      padding-left: 10px;
-      color: black;
-      font-size: larger;
-      vertical-align: middle;
-    }
+    
     span.youtube-genius-lyrics-results-line-separator,
     span.youtube-genius-lyrics-found-separator {
       padding: 0px 3px;
     }
+    
     .youtube-genius-lyrics-results-container {
       border: 1px solid black;
       border-radius: 3px;
     }
+    
     ol.youtube-genius-lyrics-results-tracklist {
       list-style: none;
       width: 99%;
       font-size: 1.15em;
     }
+    
     li.youtube-genius-lyrics-results-li {
       cursor: pointer;
       transition: background-color 0.2s;
@@ -178,56 +286,386 @@ function addCss () {
       border-radius: 3px;
       padding: 8px 6px;
     }
+    
     span.youtube-genius-lyrics-results-hide-btn,
     span.youtube-genius-lyrics-results-back-btn,
     span.youtube-genius-lyrics-found-hide-btn,
     span.youtube-genius-lyrics-found-back-btn {
       cursor: pointer;
     }
+    
     li.youtube-genius-lyrics-results-li div.onhover {
       display: none;
       margin-top: -0.25em;
     }
+    
     li.youtube-genius-lyrics-results-li div.onout {
       display: block;
     }
-    li.youtube-genius-lyrics-results-li {
-      background-color: #ffffff;
-    }
+    
     li.youtube-genius-lyrics-results-li:hover div.onhover {
       display: block;
     }
+    
     li.youtube-genius-lyrics-results-li:hover div.onout {
       display: none;
     }
-    li.youtube-genius-lyrics-results-li:hover {
-      background-color: #c8c8c8;
+    
+    ol.youtube-genius-lyrics-results-tracklist {
+      font-size: var(--ytd-link-font-size);
     }
+    
+    li.youtube-genius-lyrics-results-li {
+    
+      /* --tyt-tracklist-li-background: var(--yt-live-chat-slider-container-color); */
+    
+      --tyt-tracklist-li-background: var(--ytd-searchbox-legacy-button-color);
+    
+      background-color: var(--tyt-tracklist-li-background);
+      color: var(--ytd-searchbox-text-color);
+      border: 1px solid var(--ytd-searchbox-legacy-border-color);
+      list-style: none;
+    
+      /*
+        color: var(--yt-live-chat-secondary-text-color);
+    
+          --tyt-tracklist-li-background: var(--ytd-searchbox-legacy-button-color);
+          --tyt-tracklist-li-background: var(--yt-spec-commerce-tonal-hover);     
+    
+        */
+    
+      opacity: 0.9;
+    }
+    
+    li.youtube-genius-lyrics-results-li:hover {
+    
+      --tyt-tracklist-li-background: var(--yt-live-chat-button-dark-background-color);
+      /* --tyt-tracklist-li-background: var(--yt-live-chat-slider-active-color); */
+      border: 1px solid var(--ytd-searchbox-legacy-button-hover-border-color);
+    
+      opacity: 1.0;
+    }
+    
+    li.youtube-genius-lyrics-results-li.lyrics-minor-result {
+      font-size: 80%;
+      opacity: 0.6;
+    
+    }
+    
+    li.youtube-genius-lyrics-results-li.lyrics-minor-result:hover {
+      opacity: 0.7;
+    }
+    
     li.youtube-genius-lyrics-results-li * {
       pointer-events: none;
     }
+    
     li.youtube-genius-lyrics-results-li div.onhover span {
       color: black;
       font-size: 2.0em;
     }
+    
     li.youtube-genius-lyrics-results-li div.onout span {
-      font-size:1.5em;
+      font-size: 1.5em;
     }
+    
+    
+    body #lyricscontainer ol.tracklist li .onhover,
+    body #lyricscontainer ol.tracklist li .onout {
+      display: none;
+    
+    }
+    
+    
+    body #lyricscontainer>ol.tracklist {
+    
+      max-width: 480px;
+      min-width: 280px;
+      width: auto;
+    }
+    
+    
     span.youtube-genius-lyrics-found-config-btn {
       cursor: pointer;
     }
-    span.youtube-genius-lyrics-found-wonglyrics-btn{
+    
+    span.youtube-genius-lyrics-found-wonglyrics-btn {
       cursor: pointer;
     }
-    html[youtube-genius-lyrics-container] ytd-watch-flexy[theater] #movie_player .ytp-left-controls {
-      max-width: 50%;
+    
+    
+    html {
+      --ygl-theater-player-max-width: '--NULL--';
+      --ygl-theater-player-float: '--NULL--';
     }
-    html[youtube-genius-lyrics-container] ytd-watch-flexy[theater] #movie_player .ytp-right-controls {
-      float: right;
+    
+    html[youtube-genius-lyrics-container="found"] ytd-watch-flexy[theater],
+    html[youtube-genius-lyrics-container="loading"] ytd-watch-flexy[theater] {
+      --ygl-theater-player-max-width: 50%;
+      --ygl-theater-player-float: right;
     }
-    html[youtube-genius-lyrics-container] #showlyricsbutton{
+    
+    ytd-watch-flexy[theater] #movie_player .ytp-left-controls {
+      max-width: var(--ygl-theater-player-max-width);
+    }
+    
+    ytd-watch-flexy[theater] #movie_player .ytp-right-controls {
+      float: var(--ygl-theater-player-float);
+    }
+    
+    html[youtube-genius-lyrics-container="found"] ytd-watch-flexy[theater] #movie_player video[src],
+    html[youtube-genius-lyrics-container="loading"] ytd-watch-flexy[theater] #movie_player video[src] {
+      left: 0 !important;
+    }
+    
+    html[youtube-genius-lyrics-container] #showlyricsbutton {
       display: none;
     }
+    
+    
+    .youtube-genius-lyrics-search-input {
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-font-smoothing: antialiased;
+      background-color: transparent;
+      border: none;
+      box-shadow: none;
+      color: inherit;
+      font-family: Roboto, Noto, sans-serif;
+      text-align: inherit;
+      border: 1px solid currentColor;
+      box-sizing: border-box;
+      padding: 1px 0;
+      margin: 0;
+      outline-offset: 0px;
+      outline: none;
+      padding: 1px 6px;
+      font-size: 80%;
+      background-color: var(--yt-emoji-picker-search-background-color);
+      border-color: currentColor;
+      margin: 0 6px 0 6px;
+      flex: 1;
+    }
+
+    [dark] .youtube-genius-lyrics-search-input {
+      border-color: transparent;
+    }
+    
+    .youtube-genius-lyrics-search-input:not(:focus)::placeholder {
+      border-color: var(--yt-emoji-picker-search-placeholder-color);
+      color: var(--yt-emoji-picker-search-placeholder-color);
+    }
+
+    .youtube-genius-lyrics-search-input.placeholder-lastfetch:not(:focus)::placeholder,
+    .youtube-genius-lyrics-search-input.placeholder-lastfetch:focus::placeholder{
+      color: var(--yt-spec-text-secondary);
+      font-weight: bold;
+    }
+    
+    .youtube-genius-lyrics-search-input:focus,
+    .youtube-genius-lyrics-search-input:active {
+      border-color: var(--paper-checkbox-checked-color);
+    }
+    
+    span.youtube-genius-lyrics-search-search-btn {
+      cursor: pointer;
+      vertical-align: middle;
+      align-self: center;
+      display: inline-flex;
+      margin-left: 0;
+      margin-right: 8px;
+    }
+    
+    
+    
+    .youtube-genius-lyrics-search-search-btn:hover {
+      color: var(--yt-live-chat-toast-action-color);
+    }
+    
+    span.youtube-genius-lyrics-search-search-btn > svg {
+      fill: currentColor;
+      pointer-events: none;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    @keyframes inputNoResult {
+      0% {
+        transform: translateX(0px);
+      }
+    
+      25% {
+        transform: translateX(-6px);
+      }
+    
+      50% {
+        transform: translateX(0px);
+      }
+    
+      75% {
+        transform: translateX(6px);
+      }
+    
+      100% {
+        transform: translateX(6px);
+      }
+    }
+    
+    .youtube-genius-lyrics-search-input.lyrics-input-noresult {
+      border-color: red;
+      opacity: 0.75;
+      animation: inputNoResult 140ms;
+      animation-iteration-count: 3;
+    }
+    
+    .lyrics-searching {
+      /* dont make animation here */
+      filter: blur(0.7px);
+      opacity: 0.85;
+      pointer-events: none;
+    }
+    
+    
+    html {
+      --ygl-lyricsiframe-flex: '--NULL--';
+      --ygl-lyricscontainer-bottom: '--NULL--';
+      --ygl-lyricscontainer-border-radius: '--NULL--';
+      --ygl-lyricscontainer-padding: '--NULL--';
+      --ygl-lyricscontainer-display: '--NULL--';
+      --ygl-lyricscontainer-flex-direction: '--NULL--';
+      --ygl-lyricscontainer-bar-padding: '--NULL--';
+    }
+    
+
+    .youtube-genius-lyrics-loading-container,
+    .youtube-genius-lyrics-found-container {
+      --ygl-lyricsiframe-flex: 1;
+      --ygl-lyricscontainer-bottom: 4px;
+      /* allow override */
+      --ygl-lyricscontainer-border-radius: 0px 0px 8px 8px;
+      /* allow override */
+      --ygl-lyricscontainer-padding: 0px 8px 8px 8px;
+      /* allow override */
+      --ygl-lyricscontainer-display: flex;
+      --ygl-lyricscontainer-flex-direction: column;
+      --ygl-lyricscontainer-bar-padding: 4px 6px;
+
+    }
+
+
+    .lyricsnavbar {
+      padding: var(--ygl-lyricscontainer-bar-padding);
+    }
+    
+    body #lyricscontainer {
+      display: var(--ygl-lyricscontainer-display);
+      flex-direction: var(--ygl-lyricscontainer-flex-direction);
+      bottom: var(--ygl-lyricscontainer-bottom);
+      border-radius: var(--ygl-lyricscontainer-border-radius);
+      padding: var(--ygl-lyricscontainer-padding);
+    }
+    
+    #lyricsiframe {
+      flex: var(--ygl-lyricsiframe-flex);
+    }
+    
+    
+    
+    #lyricscontainer.youtube-genius-lyrics-loading-container #lyricsiframe {
+    
+      position: absolute;
+    
+      width: 80%;
+      height: 80%;
+      transform: translate(10%, 10%);
+    
+    
+    }
+    
+    #lyricscontainer.youtube-genius-lyrics-loading-container .loadingspinnerholder {
+    
+      position: relative;
+      width: auto !important;
+      top: auto !important;
+    
+      display: flex;
+      flex-direction: column;
+    
+      align-content: center;
+      align-items: center;
+      justify-content: center;
+    
+      overflow: hidden;
+      contain: content;
+    }
+    
+    
+    
+    .youtube-genius-lyrics-search-container {
+      --ygl-lyricscontainer-display: flex;
+      --ygl-lyricscontainer-flex-direction: row;
+      align-items: center;
+    }
+    
+    .youtube-genius-lyrics-results-container {
+      --ygl-lyricscontainer-padding: 2px 6px 6px 6px;
+    }
+    
+    .youtube-genius-lyrics-search-hide-btn,
+    .youtube-genius-lyrics-results-back-btn,
+    .youtube-genius-lyrics-results-hide-btn,
+    .youtube-genius-lyrics-results-config-btn,
+    .youtube-genius-lyrics-search-config-btn {
+      border: 1px solid var(--ytd-searchbox-background);
+      margin: 3px;
+      font-size: 0.83em;
+      color: var(--yt-live-chat-primary-text-color);
+      text-decoration: none;
+      transition: color 400ms;
+      cursor: pointer;
+    }
+    
+    .youtube-genius-lyrics-search-hide-btn:hover,
+    .youtube-genius-lyrics-results-back-btn:hover,
+    .youtube-genius-lyrics-results-hide-btn:hover,
+    .youtube-genius-lyrics-results-config-btn:hover,
+    .youtube-genius-lyrics-search-config-btn:hover {
+      color: var(--yt-live-chat-toast-action-color);
+      text-decoration: none;
+    }
+    
+    .youtube-genius-lyrics-results-line-separator {
+      font-size: 0.83em;
+      color: var(--yt-live-chat-primary-text-color);
+    }
+    
+    .youtube-genius-lyrics-search-label {
+      font-family: cursive;
+      padding: 0px 6px;
+      color: var(--yt-live-chat-primary-text-color);
+      font-size: 80%;
+    }
+
+    [dark] .youtube-genius-lyrics-search-label {
+      color: var(--yt-live-chat-author-chip-owner-background-color);
+    }
+
+    .youtube-genius-lyrics-tracklist-info-container{
+      display: flex;
+      column-gap: 6px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+    }
+
+    .youtube-genius-lyrics-tracklist-info-primary{
+      flex:1;
+    }
+
+    .youtube-genius-lyrics-tracklist-info-secondary{
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
     `
     document.head.appendChild(style)
   }
@@ -254,6 +692,7 @@ const removeElements = (typeof window.DocumentFragment.prototype.append === 'fun
   }
 
 function getMastheadHeight () {
+  // can be replaced by youtube css custom properties
   const masthead = document.querySelector('ytd-masthead#masthead')
   return masthead.getBoundingClientRect().height
 }
@@ -292,14 +731,15 @@ function calcContainerWidthTop () {
   }
 }
 
-function setFrameDimensions (container, iframe, bar) {
-  if (!container || !iframe || !bar) {
-    console.warn('elements not found in setFrameDimensions()')
-    return
-  }
+function setFrameDimensions (container, iframe, bar) { // eslint-disable-line no-unused-vars
+  // if (!container || !iframe || !bar) {
+  //   console.warn('elements not found in setFrameDimensions()')
+  //   return
+  // }
   // const bar = container.querySelector('.lyricsnavbar')
   // const width = iframe.style.width = container.clientWidth - 1 + 'px'
   // const height = iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
+  /*
   iframe.style.width = container.clientWidth - 1 + 'px'
   iframe.style.height = window.innerHeight - bar.clientHeight - getMastheadHeight() + 'px'
 
@@ -309,6 +749,7 @@ function setFrameDimensions (container, iframe, bar) {
   } else {
     iframe.style.backgroundColor = ''
   }
+  */
 
   // return [width, height]
 }
@@ -334,15 +775,15 @@ function resize () {
   const { top, width } = calcContainerWidthTop()
 
   container.style.top = `${top}px`
-  container.style.width = `${width}px`
+  container.style.setProperty('--ygl-container-width',`${width}px`)
 
-  const iframe = document.getElementById('lyricsiframe')
-  if (iframe) {
-    const bar = container.querySelector('.lyricsnavbar')
-    if (bar) {
-      setFrameDimensions(container, iframe, bar)
-    }
-  }
+  // const iframe = document.getElementById('lyricsiframe')
+  // if (iframe) {
+  //   const bar = container.querySelector('.lyricsnavbar')
+  //   if (bar) {
+  //     setFrameDimensions(container, iframe, bar)
+  //   }
+  // }
 }
 
 function getCleanLyricsContainer () {
@@ -357,12 +798,13 @@ function getCleanLyricsContainer () {
   } else {
     container = document.getElementById('lyricscontainer')
     container.innerHTML = ''
-    container.clasName = ''
+    container.className = ''
     container.style = ''
   }
 
   container.style.top = `${top}px`
-  container.style.width = `${width}px`
+  container.style.setProperty('--ygl-container-width', `${width}px`)
+
   document.body.appendChild(container)
 
   const result = document.getElementById('lyricscontainer')
@@ -373,37 +815,20 @@ function getCleanLyricsContainer () {
   return result
 }
 
-function hideLyrics () {
-  const elementsToBeRemoved = [...document.querySelectorAll('.loadingspinner')]
+function hideLyrics() {
+  if (document.querySelector('.loadingspinnerholder') !== null) {
+    genius.f.cancelLoading();
+  }
+  const elementsToBeRemoved = [...document.querySelectorAll('.loadingspinnerholder')]
   const lyricscontainer = document.getElementById('lyricscontainer')
   if (lyricscontainer) {
     elementsToBeRemoved.push(lyricscontainer)
-    document.documentElement.removeAttribute('youtube-genius-lyrics-container')
   }
+  document.documentElement.removeAttribute('youtube-genius-lyrics-container')
   const isHiding = elementsToBeRemoved.length > 0
   removeElements(elementsToBeRemoved)
   addLyricsButton()
   return isHiding
-}
-
-function hideLyricsWithMessage () {
-  if (genius.f.hideLyricsWithMessage) {
-    return genius.f.hideLyricsWithMessage(...arguments)
-  } else {
-    const ret = hideLyrics(...arguments)
-    if (ret === false) {
-      return false
-    }
-    window.postMessage({ iAm: SCRIPT_NAME, type: 'lyricsDisplayState', visibility: 'hidden' }, '*')
-    return ret
-  }
-}
-
-function onFullScreenChanged () {
-  const showlyricsbutton = document.getElementById('showlyricsbutton')
-  if (showlyricsbutton) {
-    showlyricsbutton.style.display = document.fullscreenElement ? 'none' : 'block'
-  }
 }
 
 async function showLyricsButtonClicked () {
@@ -415,27 +840,19 @@ function addLyricsButton () {
   if (document.getElementById('showlyricsbutton')) {
     return
   }
-  const top = getMastheadHeight()
+  // const top = getMastheadHeight()
   const b = document.createElement('div')
-  b.setAttribute('id', 'showlyricsbutton')
-  b.setAttribute('style', 'top:' + (top + 2) + 'px;')
+  b.id = 'showlyricsbutton'
+  // b.style.top= `${top + 2}px`;
   b.setAttribute('title', 'Load lyrics from genius.com')
-  b.textContent = '🅖'
+  b.textContent = ''
   b.addEventListener('click', function onShowLyricsButtonClick () {
     this.remove()
     showLyricsButtonClicked()
   })
   document.body.appendChild(b)
-  if (b.clientWidth < 10) {
-    b.classList.add('youtube-genius-lyrics-button-g-small')
-    b.innerHTML = 'G'
-  } else {
-    b.classList.add('youtube-genius-lyrics-button-g-normal')
-  }
+  
 
-  document.removeEventListener('fullscreenchange', onFullScreenChanged, false)
-  document.addEventListener('fullscreenchange', onFullScreenChanged, false)
-  window.setTimeout(onFullScreenChanged, 1000)
 }
 
 let lastVideoId = null
@@ -573,16 +990,20 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   let songTitle = videoTitle
 
   // song title text processing
-  songTitle = songTitle.replace(/\(.+?\)/, '')
-  songTitle = songTitle.replace(/\[.+?\]/, '')
-  songTitle = songTitle.replace(/official\s*audio/, '')
-  songTitle = songTitle.replace(/official\s*music\s*video/, '')
-  songTitle = songTitle.replace(/official\s*video/, '')
-  songTitle = songTitle.replace(/music\s*video/, '')
-  songTitle = songTitle.replace(/video/, '')
-  songTitle = songTitle.replace(/music/, '')
-  songTitle = songTitle.replace(/exclusive\s*-?/, '')
-  songTitle = songTitle.replace(/-\s*-/, ' - ')
+  songTitle = songTitle
+  .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
+  .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
+  // .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, ' ') // Symbols and Punctuation
+
+  // Symbols and Punctuation can be part of the artist name (e.g. &TEAM, milli-billi)
+
+  songTitle = songTitle.replace(/\s+/,' ')
+  songTitle = simpleTextFixup(songTitle)
+  songTitle = songTitle.replace(/\(.+?\)/g, '')
+  songTitle = songTitle.replace(/\[.+?\]/g, '')
+  songTitle = songTitle.replace(/\b(PERFORMANCE VIDEO|official mv|karaoke mv|official|music mv|audio|music|video|karaoke)\b/gi, '')
+  songTitle = songTitle.replace(/exclusive\s*-?/gi, '')
+  songTitle = songTitle.replace(/-\s*-/gi, ' - ')
   songTitle = songTitle.trim()
 
   // Pattern: Artist  - Song title
@@ -614,12 +1035,9 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 
   if (songTitle.length === 1 && 'author' in videoDetails) {
     // Fallback to video author name
-    songArtists = videoDetails.author.toLowerCase()
-    songArtists = songArtists.replace(/vevo/, '')
-    songArtists = songArtists.replace(/official/, '')
-    songArtists = songArtists.replace(/music/, '')
-    songArtists = songArtists.replace(/band/, '')
-    songArtists = songArtists.replace(/-\s*topic/, '')
+    songArtists = videoDetails.author
+    songArtists = songArtists.replace(/\b(vevo|official|music|channel)\b/gi, '')
+    songArtists = songArtists.replace(/-\s*topic/gi, '')
   } else {
     songArtists = songTitle.shift().trim()
   }
@@ -634,12 +1052,27 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 function newYtdDescriptionInfo (ytdDescriptionInfo) {
   const songArtistsArr = [ytdDescriptionInfo.singer]
   // const songArtists = ytdDescriptionInfo.singer
-  const songTitle = ytdDescriptionInfo.song
+  const songTitle = ytdDescriptionInfo.song.replace('(Karaoke)', '')
   // return object result
   return { songTitle, songArtistsArr }
 }
 
-function addLyrics (force, beLessSpecific) {
+function isYtdAppReady () {
+  let ytdAppData = null
+  let videoDetails = null
+  try {
+    ytdAppData = document.querySelector('ytd-app').__data.data
+    if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
+      videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
+    } else {
+      videoDetails = ytdAppData.playerResponse.videoDetails
+    }
+  } catch (e) {
+  }
+  return !!videoDetails
+}
+
+function getPageInfo () {
   let ytdAppData = null
   let videoDetails = null
   try {
@@ -659,23 +1092,11 @@ function addLyrics (force, beLessSpecific) {
       shortDescription: ''
     }
   }
-  if (!videoDetails.videoId) {
-    lastVideoId = null
-    hideLyricsWithMessage()
-    return
-  }
-  const tmpVideoId = `${videoDetails.videoId}${genius.option.themeKey}`
-  if (lastVideoId === tmpVideoId && document.getElementById('lyricscontainer')) {
-    // Same video id and same theme and lyrics are showing -> stop here
-    return
-  }
-  lastVideoId = tmpVideoId
+  return { ytdAppData, videoDetails }
+}
 
-  if (!ytdAppData || ytdAppData.page !== 'watch') {
-    // Not a video page or video page not visible
-    hideLyricsWithMessage()
-    return
-  }
+function getPageSongInfo (ytdAppData, videoDetails) {
+
 
   let isMusic = false
   let ytdDescriptionInfo = null
@@ -714,19 +1135,52 @@ function addLyrics (force, beLessSpecific) {
   } catch (e) {}
   if (isFamilySafe === false) return
 
-  if (force) {
-    isMusic = true
-    lastForceVideoId = lastVideoId
-  } else if (isMusic === false && (lastForceVideoId === null || lastForceVideoId !== lastVideoId)) {
-    hideLyricsWithMessage()
-    return
-  }
-
   const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
     ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
     : newYtdDescriptionInfo(ytdDescriptionInfo)
-  const musicIsPlaying = isYoutubeVideoPlaying()
-  genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
+
+    return { songTitle, songArtistsArr, isMusic } 
+}
+ 
+function addLyrics (force, beLessSpecific) {
+  try {
+    const pageInfo = getPageInfo()
+    if (!pageInfo) return
+    const { ytdAppData, videoDetails } = pageInfo
+    if (!videoDetails.videoId) {
+      lastVideoId = null
+      genius.f.hideLyricsWithMessage()
+      return
+    }
+    const tmpVideoId = `${videoDetails.videoId}${genius.option.themeKey}`
+    if (lastVideoId === tmpVideoId && document.getElementById('lyricscontainer')) {
+      // Same video id and same theme and lyrics are showing -> stop here
+      return
+    }
+    lastVideoId = tmpVideoId
+
+    if (!ytdAppData || ytdAppData.page !== 'watch') {
+      // Not a video page or video page not visible
+      genius.f.hideLyricsWithMessage()
+      return
+    }
+
+    const pageSongInfoRes = getPageSongInfo(ytdAppData, videoDetails)
+    if (!pageSongInfoRes) return
+    let {songTitle, songArtistsArr, isMusic} = pageSongInfoRes
+    if (force) {
+      isMusic = true
+      lastForceVideoId = lastVideoId
+    } else if (isMusic === false && (lastForceVideoId === null || lastForceVideoId !== lastVideoId)) {
+      genius.f.hideLyricsWithMessage()
+      return
+    }
+  
+    const musicIsPlaying = isYoutubeVideoPlaying()
+    genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
+  }catch(e){
+    // do nothing
+  }
 }
 
 let lastPos = null
@@ -750,60 +1204,126 @@ function updateAutoScroll (video) {
   }
 }
 
+function safeString (s) {
+  return (s || 0).length > 0 ? `${s}` : ''
+}
+
+async function performSearch () {
+  try {
+    const container = document.querySelector('#lyricscontainer.youtube-genius-lyrics-search-container')
+    const input = document.querySelector('input.youtube-genius-lyrics-search-input')
+    if (!container || !input) return
+    if (!input.value) {
+      input.value = safeString(window.lastFetchedQuery)
+    }
+    const inputValue = input.value
+    if (inputValue) {
+      try {
+        input.blur()
+      } catch (e) { }
+      container.classList.add('lyrics-searching')
+      genius.f.searchByQuery(inputValue, container, (res) => {
+        let c = document.querySelector('#lyricscontainer')
+        try {
+          if (res && res.status === 200) {
+            const hits = res.hits
+            if (!hits) return
+            if (hits.length > 0) {
+              listSongs(hits, container, inputValue)
+            } else {
+              input.classList.add('lyrics-input-noresult')
+              window.incorrectInputValue = inputValue
+            }
+          }
+        } catch (e) { }
+        if (c !== null) {
+          c.classList.remove('lyrics-searching')
+        }
+      })
+    } else {
+      input.classList.add('lyrics-input-noresult')
+      window.incorrectInputValue = ''
+    }
+  } catch (e) {
+    console.warn(e)
+  }
+}
+
+function onSearchLyricsKeyDown (ev) {
+  const input = this
+  if (typeof window.incorrectInputValue === 'string' && input.value !== window.incorrectInputValue) {
+    window.incorrectInputValue = null
+    input.classList.remove('lyrics-input-noresult')
+  }
+}
+
+function onSearchLyricsKeyUp (ev) {
+  const input = this
+  if (ev.code === 'Escape') {
+    ev.preventDefault()
+    input.value = ''
+  } else if (ev.code === 'Enter') {
+    ev.preventDefault()
+    performSearch()
+    return
+  }
+  if (typeof window.incorrectInputValue === 'string' && input.value !== window.incorrectInputValue) {
+    window.incorrectInputValue = null
+    input.classList.remove('lyrics-input-noresult')
+  }
+}
+function onSearchLyricsSearchBtnClick (ev) {
+  ev.preventDefault()
+  performSearch()
+}
+
+function onSearchLyricsHideBtnClick (ev) {
+  genius.f.hideLyricsWithMessage()
+}
+
 function showSearchField (query) {
   const spanLabel = document.createElement('span')
-  spanLabel.classList.add('youtube-genius-lyrics-search-container-label')
+  spanLabel.classList.add('youtube-genius-lyrics-search-label')
   spanLabel.textContent = 'Search genius.com: '
 
   const input = document.createElement('input')
-  input.className = 'SearchInputBox__input'
-  input.placeholder = 'Search genius.com...'
+  input.classList.add('youtube-genius-lyrics-search-input')
+  // input.placeholder = 'Search genius.com...'
 
-  const span = document.createElement('span')
-  span.classList.add('youtube-genius-lyrics-search-container-span')
-  span.textContent = ' \uD83D\uDD0D'
+  const searchBtn = document.createElement('span')
+  searchBtn.classList.add('youtube-genius-lyrics-search-search-btn')
+  searchBtn.innerHTML = '<svg width="12" height="12" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 342 342"><path d="M337 317 239 219C259 196 270 166 270 134 270 60 210 0 135 0S0 60 0 134 61 268 135 268C167 268 196 257 219 239L317 337C323 343 331 343 337 337S343 323 337 317ZM29 134C29 76 76 29 135 29S241 76 241 134 194 239 135 239 29 192 29 134Z"/></svg>'
 
   // Hide button
   const hideButton = document.createElement('span')
-  hideButton.classList.add('youtube-genius-lyrics-search-container-hide-btn')
-  hideButton.title = 'Hide'
-  hideButton.textContent = '\uD83C\uDD87'
-  hideButton.addEventListener('click', function hideButtonClick (ev) {
-    hideLyricsWithMessage()
-  })
+  hideButton.classList.add('youtube-genius-lyrics-search-hide-btn')
+  hideButton.textContent = 'Hide'
+  hideButton.addEventListener('click', onSearchLyricsHideBtnClick, false)
 
-  if (query) {
-    input.value = query
-  } else if (genius.current.artists) {
-    input.value = genius.current.artists
-  }
-  input.addEventListener('change', function onSearchLyricsButtonClick () {
-    if (input.value) {
-      genius.f.searchByQuery(input.value, b)
-    }
-  })
-  input.addEventListener('keyup', function onSearchLyricsKeyUp (ev) {
-    if (ev.code === 'Enter') {
-      ev.preventDefault()
-      if (input.value) {
-        genius.f.searchByQuery(input.value, b)
-      }
-    }
-  })
-  span.addEventListener('click', function onSearchLyricsKeyUp (ev) {
-    if (input.value) {
-      genius.f.searchByQuery(input.value, b)
-    }
-  })
+  const configButton = createConfigBtn('youtube-genius-lyrics-search-config-btn')
+
+  input.value = safeString(query) || ''
+  const fetechQuery = safeString(window.lastFetchedQuery)
+  input.placeholder = fetechQuery || `${genius.option.defaultPlaceholder}`
+  input.classList.toggle('placeholder-lastfetch', !!fetechQuery)
+
+  let b = null // container
+  window.incorrectInputValue = null
+
+  input.addEventListener('keydown', onSearchLyricsKeyDown, false)
+  input.addEventListener('keyup', onSearchLyricsKeyUp, false)
+  searchBtn.addEventListener('click', onSearchLyricsSearchBtnClick, false)
 
   // flush DOM
-  const b = getCleanLyricsContainer()
+  b = getCleanLyricsContainer()
+
   b.classList.add('youtube-genius-lyrics-search-container')
   document.documentElement.setAttribute('youtube-genius-lyrics-container', 'search')
   appendElements(b, [
     spanLabel,
     input,
-    span,
+    searchBtn,
+    configButton,
     hideButton
   ])
   document.body.appendChild(b)
@@ -814,7 +1334,30 @@ function showSearchField (query) {
   })
 }
 
-function setupLyricsDisplayDOM (song, searchresultsLengths) {
+function createConfigBtn (cName) {
+  const configButton = document.createElement('span')
+  configButton.classList.add(cName)
+  configButton.textContent = 'Options'
+  configButton.addEventListener('click', function configButtonClick (ev) {
+    genius.f.config()
+  })
+  return configButton
+}
+
+function onLyricsFoundHideBtnClick (ev) {
+  genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
+  genius.f.hideLyricsWithMessage()
+}
+
+function onLyricsFoundBackToSearchClick (ev) {
+  if (document.querySelector('.loadingspinnerholder') !== null) {
+    genius.f.cancelLoading();
+  }
+  genius.f.forgetLyricsSelection(genius.current.title, genius.current.artists)
+  showSearchField()
+}
+
+function setupLyricsDisplayDOM (song, searchresultsLengths) { // eslint-disable-line no-unused-vars
   // getCleanLyricsContainer
   const container = getCleanLyricsContainer()
   container.className = '' // custom.getCleanLyricsContainer might forget to clear the className if the element is reused
@@ -826,8 +1369,6 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) {
     return
   }
 
-  let elementsToBeAppended = []
-
   let separator = document.createElement('span')
   separator.classList.add('second-line-separator')
   separator.classList.add('youtube-genius-lyrics-found-separator')
@@ -835,8 +1376,6 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) {
 
   const bar = document.createElement('div')
   bar.classList.add('lyricsnavbar')
-  bar.style.fontSize = '0.7em'
-  bar.style.userSelect = 'none'
 
   /*
   // Resize button
@@ -854,57 +1393,43 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) {
   const hideButton = document.createElement('span')
   hideButton.classList.add('youtube-genius-lyrics-found-hide-btn')
   hideButton.textContent = 'Hide'
-  hideButton.addEventListener('click', function hideButtonClick (ev) {
-    genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
-    hideLyricsWithMessage()
-  })
-  elementsToBeAppended.push(hideButton, separator.cloneNode(true))
+  hideButton.addEventListener('click', onLyricsFoundHideBtnClick, false)
 
   // Config button
-  const configButton = document.createElement('span')
-  configButton.classList.add('youtube-genius-lyrics-found-config-btn')
-  configButton.textContent = 'Options'
-  configButton.addEventListener('click', function configButtonClick (ev) {
-    genius.f.config()
-  })
-  elementsToBeAppended.push(configButton)
-
+  const configButton = createConfigBtn('youtube-genius-lyrics-found-config-btn')
+  let goToSearchBtn = null
   if (searchresultsLengths === 1) {
     // Wrong lyrics button
     const wrongLyricsButton = document.createElement('span')
     wrongLyricsButton.classList.add('youtube-genius-lyrics-found-wonglyrics-btn')
     wrongLyricsButton.textContent = 'Search lyrics'
-    wrongLyricsButton.addEventListener('click', function wrongLyricsButtonClick (ev) {
-      removeElements(document.querySelectorAll('.loadingspinnerholder'))
-      genius.f.forgetLyricsSelection(genius.current.title, genius.current.artists)
-      showSearchField(`${genius.current.artists} ${genius.current.title}`)
-    })
-    elementsToBeAppended.push(separator.cloneNode(true), wrongLyricsButton)
+    wrongLyricsButton.addEventListener('click', onLyricsFoundBackToSearchClick, false)
+    goToSearchBtn = wrongLyricsButton
   } else if (searchresultsLengths > 1) {
     // Back button
     const backbutton = document.createElement('span')
     backbutton.classList.add('youtube-genius-lyrics-found-back-btn')
     backbutton.textContent = `Back to search (${searchresultsLengths - 1} other result${searchresultsLengths === 2 ? '' : 's'})`
-    backbutton.addEventListener('click', function backbuttonClick (ev) {
-      showSearchField(genius.current.artists + ' ' + genius.current.title)
-    })
-    elementsToBeAppended.push(separator.cloneNode(true), backbutton)
+    backbutton.addEventListener('click', onLyricsFoundBackToSearchClick, false)
+    goToSearchBtn = backbutton
   }
 
   const iframe = document.createElement('iframe')
   iframe.id = 'lyricsiframe'
   iframe.style.opacity = 0.1
 
-  // clean up
-  separator = null
-
   // flush to DOM tree
-  appendElements(bar, elementsToBeAppended)
+  appendElements(bar, [
+    goToSearchBtn,
+    separator.cloneNode(true),
+    configButton,
+    separator.cloneNode(true),
+    hideButton
+  ])
   appendElements(container, [bar, iframe])
 
   // clean up
-  elementsToBeAppended.length = 0
-  elementsToBeAppended = null
+  separator = null
 
   return {
     container,
@@ -922,10 +1447,7 @@ function getHitOfElement (li) {
 
 function formatPageViews (stats) {
   if (!stats) return null
-  if (typeof stats.pageviews === 'number') {
-    return genius.f.metricPrefix(stats.pageviews, 1)
-  }
-  return null
+  return 'pageviews' in stats && typeof stats.pageviews === 'number' ? genius.f.metricPrefix(stats.pageviews, 1) : ' - '
 }
 
 async function rememberLyricsSelection (title, artists, hit) {
@@ -938,20 +1460,35 @@ async function rememberLyricsSelection (title, artists, hit) {
   genius.f.rememberLyricsSelection(title, artists, jsonHit)
 }
 
+function onLyricsResultsBackBtnClick (ev) {
+  showSearchField()
+}
+
+function onLyricsResultsHideBtnClick (ev) {
+  genius.f.hideLyricsWithMessage()
+}
+
+function onLyricsResultsTrackListClick (ev) {
+  const tracklist = this
+  const element = ev.target
+  if (element.nodeName === 'LI') {
+    const hit = getHitOfElement(element)
+    if (hit !== null) {
+      const title = genius.current.title
+      const artists = genius.current.artists
+      const searchresultsLengths = tracklist.querySelectorAll('li').length
+      genius.f.showLyrics(hit, searchresultsLengths)
+      rememberLyricsSelection(title, artists, hit)
+    }
+  }
+}
+
 function listSongs (hits, container, query) {
   // Back to search button
   const backToSearchButton = document.createElement('span')
   backToSearchButton.classList.add('youtube-genius-lyrics-results-back-btn')
   backToSearchButton.textContent = 'Back to search'
-  backToSearchButton.addEventListener('click', function backToSearchButtonClick (ev) {
-    if (query) {
-      showSearchField(query)
-    } else if (genius.current.artists) {
-      showSearchField(genius.current.artists + ' ' + genius.current.title)
-    } else {
-      showSearchField()
-    }
-  })
+  backToSearchButton.addEventListener('click', onLyricsResultsBackBtnClick, false)
 
   const separator = document.createElement('span')
   separator.classList.add('second-line-separator')
@@ -962,46 +1499,45 @@ function listSongs (hits, container, query) {
   const hideButton = document.createElement('span')
   hideButton.classList.add('youtube-genius-lyrics-results-hide-btn')
   hideButton.textContent = 'Hide'
-  hideButton.addEventListener('click', function hideButtonClick (ev) {
-    hideLyricsWithMessage()
-  })
+  hideButton.addEventListener('click', onLyricsResultsHideBtnClick, false)
+
+  // Config button
+  const configButton = createConfigBtn('youtube-genius-lyrics-results-config-btn')
 
   // List search results
   const tracklistOL = document.createElement('ol')
   tracklistOL.classList.add('tracklist')
   tracklistOL.classList.add('youtube-genius-lyrics-results-tracklist')
-  tracklistOL.addEventListener('click', function onclick (ev) {
-    const element = ev.target
-    if (element.nodeName === 'LI') {
-      const hit = getHitOfElement(element)
-      if (hit !== null) {
-        genius.f.showLyrics(hit, searchresultsLengths)
-        rememberLyricsSelection(title, artists, hit)
-      }
-    }
-  }, true)
+  tracklistOL.addEventListener('click', onLyricsResultsTrackListClick, true)
 
-  // cache the required information
-  const searchresultsLengths = hits.length
-  const title = genius.current.title
-  const artists = genius.current.artists
+
+  let autoHit = autoSelectLyrics(hits) // setup _matchSource
+  if (autoHit) autoHit = autoHit.hit
+  let isTopResultBeingAutoHit = autoHit === hits[0]
 
   // prepare results
   const liArr = hits.map(function hitsMap (hit) {
     const li = document.createElement('li')
     li.classList.add('youtube-genius-lyrics-results-li')
+    if (isTopResultBeingAutoHit && hit._order === hits[0]._order && hit._matchScore === hits[0]._matchScore) {
+      li.classList.add('lyrics-major-result')
+    } else {
+      li.classList.add('lyrics-minor-result')
+    }
     li.setAttribute('title', `${hit.result.title_with_featured}`)
 
     const showPageViews = false // no need to show this; pageviews usually NaN
+    const showLyricsState = true
 
     const trackhtml =
       `<div>
         <div class="onhover"><span>🅖</span></div>
         <div class="onout"><span>📄</span></div>
       </div>
-      <div>
-      <p>${hit.result.primary_artist.name} • ${hit.result.title}</p>
-      ${showPageViews ? `<p><span style="font-size:0.7em">👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}</span></p>` : ''}
+      <div class="youtube-genius-lyrics-tracklist-info-container">
+      <p class="youtube-genius-lyrics-tracklist-info-primary">${hit.result.primary_artist.name} • ${hit.result.title}</p>
+      ${showPageViews && showLyricsState ? `<p class="youtube-genius-lyrics-tracklist-info-secondary"><span style="font-size:0.7em">👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}</span></p>` : ''}
+      ${!showPageViews && showLyricsState ? `<p class="youtube-genius-lyrics-tracklist-info-secondary"><span style="font-size:0.7em">${hit.result.lyrics_state}</span></p>` : ''}
       </div>
       <div style="clear:left;"></div>`
 
@@ -1019,13 +1555,15 @@ function listSongs (hits, container, query) {
     container = getCleanLyricsContainer()
   } else {
     container.className = ''
+    container.innerHTML = ''
   }
   container.classList.add('youtube-genius-lyrics-results-container')
   document.documentElement.setAttribute('youtube-genius-lyrics-container', 'results')
-  container.innerHTML = ''
   appendElements(container, [
     backToSearchButton,
     separator,
+    configButton,
+    separator.cloneNode(true),
     hideButton,
     tracklistOL
   ])
@@ -1036,13 +1574,12 @@ function loremIpsum () {
   const classWhitespace = ['<span class="white">', '</span>']
   const random = (x) => 1 + parseInt(Math.random() * x)
   let text = ''
-  const loopM = [Math.max(3, random(5)), random(6), random(9), 1 + random(10), 1 + random(7)]
-  for (let v = 0; v < loopM[0]; v++) {
-    for (let b = 0; b < loopM[1]; b++) {
+  for (let v = 0; v < Math.max(3, random(5)) + 4; v++) {
+    for (let b = 0; b < random(6); b++) {
       const line = []
-      for (let l = 0; l < loopM[2]; l++) {
-        for (let w = 0; w < loopM[3]; w++) {
-          for (let i = 0; i < loopM[4]; i++) {
+      for (let l = 0; l < random(9); l++) {
+        for (let w = 0; w < 1 + random(10); w++) {
+          for (let i = 0; i < 1 + random(7); i++) {
             line.push('x')
           }
           line.push(classText[1] + classWhitespace[0] + '&#160;' + classWhitespace[1] + classText[0])
@@ -1058,39 +1595,53 @@ function loremIpsum () {
 function createSpinner (spinnerHolder) {
   lyricsDisplayState = 'loading'
   const lyricscontainer = document.getElementById('lyricscontainer')
-
-  const rect = lyricscontainer.getBoundingClientRect()
-  spinnerHolder.style.left = ''
-  spinnerHolder.style.right = '0px'
-  spinnerHolder.style.top = lyricscontainer.style.top || '56px'
-  spinnerHolder.style.width = lyricscontainer.style.width || (rect.width - 1 + 'px')
+  lyricscontainer.className = ''
+  lyricscontainer.classList.add('youtube-genius-lyrics-loading-container')
+  document.documentElement.setAttribute('youtube-genius-lyrics-container', 'loading')
 
   const spinner = spinnerHolder.appendChild(document.createElement('div'))
   spinner.classList.add('loadingspinner')
-  spinner.style.marginLeft = (rect.width / 2) + 'px'
 
   const lorem = spinnerHolder.appendChild(document.createElement('div'))
-  lorem.classList.add('lorem')
+  lorem.classList.add('lorem', 'lorem-scroll')
   lorem.innerHTML = loremIpsum()
-
-  function resizeSpinner () {
-    const spinnerHolder = document.querySelector('.loadingspinnerholder')
-    const lyricscontainer = document.getElementById('lyricscontainer')
-    if (spinnerHolder && lyricscontainer) {
-      const rect = lyricscontainer.getBoundingClientRect()
-      spinnerHolder.style.top = lyricscontainer.style.top || '56px'
-      spinnerHolder.style.width = lyricscontainer.style.width || (rect.width - 1 + 'px')
-      const loadingSpinner = spinnerHolder.querySelector('.loadingspinner')
-      if (loadingSpinner) {
-        loadingSpinner.style.marginLeft = (rect.width / 2) + 'px'
-      }
-      window.setTimeout(resizeSpinner, 1000)
-    }
-  }
-  window.setTimeout(resizeSpinner, 1000)
 
   return spinner
 }
+
+function customSpinnerDOM (container, bar, iframe) {
+  const spinnerDOM = {
+    createSpinnerHolder: () => {
+      const spinnerHolder = document.createElement('div')
+      spinnerHolder.classList.add('loadingspinnerholder')
+      spinnerDOM.spinnerHolder = spinnerHolder
+    },
+    createSpinner: () => {
+      let spinner = null
+      const spinnerHolder = spinnerDOM.spinnerHolder
+      spinner = createSpinner(spinnerHolder)
+      spinnerDOM.spinner = spinner
+    },
+    displaySpinnerHolder: () => {
+      container.appendChild(spinnerDOM.spinnerHolder)
+    },
+    setStatusTitle: (title) => {
+      const spinnerHolder = spinnerDOM.spinnerHolder
+      spinnerHolder.title = title
+    },
+    setSpinnerNum: (text) => {
+      const spinner = spinnerDOM.spinner
+      spinner.textContent = text
+    },
+    remove: (text) => {
+      const spinnerHolder = spinnerDOM.spinnerHolder
+      spinnerHolder.remove()
+    }
+  }
+  return spinnerDOM
+
+}
+
 
 function iframeLoadedCallback1 (res) {
   lyricsDisplayState = 'loaded'
@@ -1182,14 +1733,19 @@ function main () {
     // avoid iframe communcation error
     return
   }
-  /*
-  if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
 
-  }
-  */
-  if (!document.querySelector('ytd-watch-flexy #container .title')) {
+  let ytdApp = document.querySelector('ytd-app')
+  let ytdAppData = ytdApp.__data.data
+  if(!ytdAppData){
+    // the status is unknown
+    return
+  } else if(ytdAppData.page !=='watch' || !isYtdAppReady()) {
+    // ytdApp is initized but the pagetype or video info not exist
+    // (youtube web app page to 'search' or 'browse')
+    genius.f.hideLyricsWithMessage()
     return
   }
+
   if (genius.option.autoShow) {
     addLyrics()
   } else {
@@ -1331,11 +1887,11 @@ if (document.location.hostname.startsWith('music')) {
   })
 } else {
   let isInIframe = null
-  try {
+  try{
     isInIframe = top && window && top.constructor.name === 'Window' && window.constructor.name === 'Window' && top !== window
-  } catch (e) { }
+  }catch(e){}
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
-  if (isInIframe === true && isRobotsTxt === false) return // other iframes
+  if (isInIframe && !isRobotsTxt) return
 
   const setupMain = isRobotsTxt
     ? function setupMain () {
@@ -1368,6 +1924,7 @@ if (document.location.hostname.startsWith('music')) {
     setFrameDimensions,
     onResize,
     createSpinner,
+    customSpinnerDOM,
     iframeLoadedCallback1,
     iframeLoadedCallback2,
     autoSelectLyrics
@@ -1376,7 +1933,7 @@ if (document.location.hostname.startsWith('music')) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
 
     function videoTimeUpdate (ev) {
-      if (genius.f.isScrollLyricsEnabled()) {
+      if (genius.f.isScrollLyricsCallable()) {
         if ((ev || 0).target.nodeName === 'VIDEO') updateAutoScroll()
       }
     }
@@ -1384,7 +1941,7 @@ if (document.location.hostname.startsWith('music')) {
       const detail = ((ev || 0).detail || 0)
       const action = detail.action || ''
       if (action === 'hideLyrics') {
-        hideLyricsWithMessage()
+        genius.f.hideLyricsWithMessage()
       } else if (action === 'showLyrics') {
         showLyricsButtonClicked()
       } else if (action === 'reloadCurrentLyrics') {
@@ -1399,6 +1956,21 @@ if (document.location.hostname.startsWith('music')) {
       const data = ((e || 0).data || 0)
       if (data.iAm === SCRIPT_NAME && data.type === 'lyricsDisplayState') {
         let isScrollLyricsEnabled = false
+        if (data.visibility !== 'loading') {
+          let c = document.querySelector('#lyricscontainer.youtube-genius-lyrics-loading-container')
+          if (c) {
+            c.classList.remove('youtube-genius-lyrics-loading-container')
+            if (data.visibility === 'loaded') {
+              c.classList.add('youtube-genius-lyrics-found-container')
+              document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
+              window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
+            } else {
+              document.documentElement.removeAttribute('youtube-genius-lyrics-container') // ???
+            }
+          }
+        } else {
+          window.lastFetchedQuery = null
+        }
         if (data.visibility === 'loaded' && data.lyricsSuccess === true) {
           isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()
         }
@@ -1435,6 +2007,7 @@ if (document.location.hostname.startsWith('music')) {
         // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
         let fontSize = null
         let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
+        let linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
 
         const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
         if (expander) {
@@ -1461,10 +2034,11 @@ if (document.location.hostname.startsWith('music')) {
         }
 
         Object.assign(genius.styleProps, {
-          '--ygl-background': (background === null ? '' : `${background}`),
-          '--ygl-color': (color === null ? '' : `${color}`),
-          '--ygl-font-size': (fontSize === null ? '' : `${fontSize}`),
-          '--ygl-infobox-background': (slbc === null ? '' : `${slbc}`)
+          '--egl-background': (background === null ? '' : `${background}`),
+          '--egl-color': (color === null ? '' : `${color}`),
+          '--egl-font-size': (fontSize === null ? '' : `${fontSize}`),
+          '--egl-infobox-background': (slbc === null ? '' : `${slbc}`),
+          '--egl-link-color': (`${linkColor}`)
         })
         return true
       }
@@ -1477,10 +2051,12 @@ if (document.location.hostname.startsWith('music')) {
       noRawReleaseDate: true,
       shortenArtistName: true,
       fixArtistName: true,
-      removeStats: true,
-      noRelatedLinks: true
+      removeStats: true, // pageviews cannot be displayed
+      noRelatedLinks: true,
+      onlyCompleteLyrics: true
     })
-    genius.option.cacheHTMLRequest = false // 1 lyrics page consume 2XX KB
+    genius.option.enableStyleSubstitution = true
+    genius.option.cacheHTMLRequest = true // 1 lyrics page consume 2XX KB [OR 25 ~ 50KB under ]
 
     document.documentElement.classList.add('youtube-genius-lyrics')
   }

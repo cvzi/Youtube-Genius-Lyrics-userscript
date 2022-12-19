@@ -2056,7 +2056,7 @@ if (document.location.hostname.startsWith('music')) {
       fixArtistName: true,
       removeStats: true, // pageviews cannot be displayed
       noRelatedLinks: true,
-      onlyCompleteLyrics: true
+      onlyCompleteLyrics: false
     })
     genius.option.enableStyleSubstitution = true
     genius.option.cacheHTMLRequest = true // 1 lyrics page consume 2XX KB [OR 25 ~ 50KB under ]

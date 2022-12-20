@@ -11,18 +11,14 @@ General information about userscripts and how to use them can be found at [openu
 [**Click here to install**](https://greasyfork.org/scripts/386259-youtube-genius-lyrics/code/Youtube%20Genius%20Lyrics.user.js)  
 Tested with Firefox/**Tampermonkey** and Chrome/**Tampermonkey**.
 
-### Navigation Links:
-*   [Github - Youtube Genius Lyrics Userscript](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript)
-*   [Github - Genius Lyrics Userscript (Library)](https://github.com/cvzi/genius-lyrics-userscript/)
-*   [Greasyfork - Youtube Genius Lyrics Userscript](https://greasyfork.org/en/scripts/386259-youtube-genius-lyrics)
-*   [Greasyfork - Genius Lyrics Userscript (Library)](https://greasyfork.org/en/scripts/406698-geniuslyrics)
+Family of GeniusLyrics Userscripts:
+*   Powered by **GeniusLyrics Library** [GitHub](https://github.com/cvzi/genius-lyrics-userscript/) [Greaskfork](https://greasyfork.org/en/scripts/406698-geniuslyrics)
+*   **Spotify Genius Lyrics** [GitHub](https://github.com/cvzi/Spotify-Genius-Lyrics-userscript) [Greaskfork](https://greasyfork.org/en/scripts/377439-spotify-genius-lyrics)
+*   **Youtube Genius Lyrics** [GitHub](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript) [Greaskfork](https://greasyfork.org/en/scripts/386259-youtube-genius-lyrics)
+*   **Youtube Music Genius Lyrics** [GitHub](https://github.com/cvzi/Youtube-Music-Genius-Lyrics-userscript/) [Greaskfork](https://greasyfork.org/en/scripts/406892-youtube-music-genius-lyrics)
 
 ### Contributors:
 [![Contributors](https://contrib.rocks/image?repo=cvzi/Youtube-Genius-Lyrics-userscript)](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/graphs/contributors)
-
-### Similar scripts:
-*   [Youtube Music Genius Lyrics](https://github.com/cvzi/Youtube-Music-Genius-Lyrics-userscript)
-*   [Spotify Genius Lyrics](https://github.com/cvzi/Spotify-Genius-Lyrics-userscript)
 
 ### Screenshots:
 - Default theme ![Screenshot of youtube music video with lyrics](screenshot.png)

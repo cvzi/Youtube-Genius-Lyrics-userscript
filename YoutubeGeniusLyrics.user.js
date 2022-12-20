@@ -1900,7 +1900,8 @@ if (document.location.hostname.startsWith('music')) {
       document.removeEventListener('yt-navigate-finish', delayedMain, false)
       document.addEventListener('yt-navigate-finish', delayedMain, false)
     }
-
+  
+  genius = null
   if (isInIframe && !isRobotsTxt) {
     // do nothing
   } else {
@@ -1932,7 +1933,7 @@ if (document.location.hostname.startsWith('music')) {
     })
   }
 
-  if (isRobotsTxt === false) {
+  if (isRobotsTxt === false && genius !== null && genius.option) {
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
 
     function videoTimeUpdate (ev) {

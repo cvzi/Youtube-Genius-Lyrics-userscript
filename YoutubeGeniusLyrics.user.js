@@ -850,7 +850,7 @@ function addLyricsButton () {
   showlyricsbutton.id = 'showlyricsbutton'
   showlyricsbutton.setAttribute('title', 'Load lyrics from genius.com')
   showlyricsbutton.addEventListener('click', showLyricsButtonClicked, false)
-  document.body.appendChild(b)
+  document.body.appendChild(showlyricsbutton)
 }
 
 function removeLyricsButton () {

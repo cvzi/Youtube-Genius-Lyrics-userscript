@@ -46,6 +46,7 @@ let genius
 const SCRIPT_NAME = 'Youtube Genius Lyrics'
 
 let lyricsDisplayState = 'hidden'
+let disableShowLyricsButton = false // hide if the page is confirmed as non-video page
 
 function addCss () {
   let style = document.querySelector('style#youtube_genius_lyrics_style')
@@ -197,7 +198,8 @@ function addCss () {
     }
     
     #showlyricsbutton {
-      position: absolute;
+      position: fixed; /* youtube's unknown layout bug - the 'absolute' position top would offset upwards by around 80px after the page is changed */
+      /* note: youtube layouts are inside ytd-watch-flexy by default; therefore the 'absolute' layout for elements outside ytd-watch-flexy is not guaranteed */
       z-index: 3000;
       right: 4px;
       cursor: pointer;
@@ -832,25 +834,34 @@ function hideLyrics () {
 }
 
 async function showLyricsButtonClicked () {
+  removeLyricsButton()
   genius.option.autoShow = true // Temporarily enable showing lyrics automatically on song change
   addLyrics(true)
 }
 
 function addLyricsButton () {
+  if (disableShowLyricsButton === true) return
   if (document.getElementById('showlyricsbutton')) {
     return
   }
   // const top = getMastheadHeight()
-  const b = document.createElement('div')
-  b.id = 'showlyricsbutton'
-  // b.style.top= `${top + 2}px`;
-  b.setAttribute('title', 'Load lyrics from genius.com')
-  b.textContent = ''
-  b.addEventListener('click', function onShowLyricsButtonClick () {
-    this.remove()
-    showLyricsButtonClicked()
-  })
-  document.body.appendChild(b)
+  const showlyricsbutton = document.createElement('div')
+  showlyricsbutton.id = 'showlyricsbutton'
+  showlyricsbutton.setAttribute('title', 'Load lyrics from genius.com')
+  showlyricsbutton.addEventListener('click', showLyricsButtonClicked, false)
+  document.body.appendChild(showlyricsbutton)
+}
+
+function removeLyricsButton () {
+  let showlyricsbutton = document.getElementById('showlyricsbutton')
+  if (showlyricsbutton !== null) {
+    try {
+      showlyricsbutton.remove()
+    } catch (e) {
+      // do nothing
+    }
+  }
+  showlyricsbutton = null
 }
 
 let lastVideoId = null
@@ -930,6 +941,8 @@ function getMusicTitleAndAuthor (pData) {
         }
       }
     }
+  } else if (carouselLockups && carouselLockups.length > 1) {
+    setDisableShowLyricsButton(true) // one video with multiple musics
   }
   return null
 }
@@ -1075,15 +1088,13 @@ function isYtdAppReady () {
   return !!videoDetails
 }
 
-function getPageInfo () {
-  let ytdAppData = null
+function getVideoInfo (ytdAppData) {
   let videoDetails = null
   try {
-    ytdAppData = getYtdAppData()
     if ('player' in ytdAppData && 'args' in ytdAppData.player && 'raw_player_response' in ytdAppData.player.args && 'videoDetails' in ytdAppData.player.args.raw_player_response) {
-      videoDetails = ytdAppData.player.args.raw_player_response.videoDetails
+      videoDetails = ytdAppData.player.args.raw_player_response.videoDetails || null
     } else {
-      videoDetails = ytdAppData.playerResponse.videoDetails
+      videoDetails = ytdAppData.playerResponse.videoDetails || null
     }
   } catch (e) {
     console.warn(SCRIPT_NAME + ' addLyrics() Could not find videoDetails')
@@ -1095,7 +1106,7 @@ function getPageInfo () {
       shortDescription: ''
     }
   }
-  return { ytdAppData, videoDetails }
+  return videoDetails // could be null
 }
 
 function getPageSongInfo (ytdAppData, videoDetails) {
@@ -1143,13 +1154,36 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   return { songTitle, songArtistsArr, isMusic }
 }
 
+function setDisableShowLyricsButton (newValue) {
+  if (newValue === disableShowLyricsButton) return
+  disableShowLyricsButton = newValue
+  if (disableShowLyricsButton === true) {
+    removeLyricsButton()
+  }
+  // note: setting to false would not immediately generate the button
+}
+
 function addLyrics (force, beLessSpecific) {
+  const isMainCall = arguments.length === 0
+  if (isMainCall) setDisableShowLyricsButton(false) // reset to false for every addLyrics()
   try {
-    const pageInfo = getPageInfo()
-    if (!pageInfo) return
-    const { ytdAppData, videoDetails } = pageInfo
-    if (!videoDetails.videoId) {
+    // ytd application data
+    const ytdAppData = getYtdAppData()
+    if (!ytdAppData) return // rarely happen; only if addLyrics triggered when the page is still loading
+    if (ytdAppData.page !== 'watch') {
+      // Not a video page or video page not visible
       lastVideoId = null
+      if (isMainCall) setDisableShowLyricsButton(true) // no button if the page is confirmed as non-video page like 'browse', 'search'
+      genius.f.hideLyricsWithMessage()
+      return
+    }
+
+    // ytd video data
+    const videoDetails = getVideoInfo(ytdAppData)
+    if (!videoDetails || !videoDetails.videoId) {
+      lastVideoId = null
+      if (isMainCall) setDisableShowLyricsButton(false) // try to get page info again when user clicks the button
+      else if (force === true) setDisableShowLyricsButton(true) // no video details when the button is clicked
       genius.f.hideLyricsWithMessage()
       return
     }
@@ -1160,12 +1194,6 @@ function addLyrics (force, beLessSpecific) {
     }
     lastVideoId = tmpVideoId
 
-    if (!ytdAppData || ytdAppData.page !== 'watch') {
-      // Not a video page or video page not visible
-      genius.f.hideLyricsWithMessage()
-      return
-    }
-
     const pageSongInfoRes = getPageSongInfo(ytdAppData, videoDetails)
     if (!pageSongInfoRes) return
     let { songTitle, songArtistsArr, isMusic } = pageSongInfoRes
@@ -1173,11 +1201,13 @@ function addLyrics (force, beLessSpecific) {
       isMusic = true
       lastForceVideoId = lastVideoId
     } else if (isMusic === false && (lastForceVideoId === null || lastForceVideoId !== lastVideoId)) {
+      if (isMainCall) setDisableShowLyricsButton(false) // the media is valid but only find lyrics when the shownlyricsbutton is clicked
       genius.f.hideLyricsWithMessage()
       return
     }
 
     const musicIsPlaying = isYoutubeVideoPlaying()
+    if (isMainCall) setDisableShowLyricsButton(false) // valid media
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   } catch (e) {
     // do nothing

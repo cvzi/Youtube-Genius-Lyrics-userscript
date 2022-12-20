@@ -19,6 +19,7 @@
 // @grant           GM.setValue
 // @grant           GM.getValue
 // @grant           GM.registerMenuCommand
+// @grant           GM_addValueChangeListener
 // @connect         genius.com
 // @match           https://www.youtube.com/*
 // @match           https://music.youtube.com/*
@@ -38,7 +39,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, geniusLyrics, top */ // eslint-disable-line no-unused-vars, no-redeclare
+/* global GM, genius, geniusLyrics, top, GM_addValueChangeListener */ // eslint-disable-line no-unused-vars, no-redeclare
 
 'use strict'
 
@@ -1992,6 +1993,29 @@ if (document.location.hostname.startsWith('music')) {
         }
       }
     }, true)
+
+    function autoscrollenabledChanged () {
+      // when value is configurated in any tab, this function will be triggered in all tabs by Userscript Manager
+      if (typeof genius.f.updateAutoScrollEnabled !== 'function') return
+      window.requestAnimationFrame(() => {
+        // not execute for all foreground and background tabs, only execute when the tab is visibile / when the tab shows
+        genius.f.updateAutoScrollEnabled().then(() => {
+          let isScrollLyricsEnabled = false
+          if (lyricsDisplayState === 'loaded') {
+            isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()
+          }
+          if (isScrollLyricsEnabled === true) {
+            document.addEventListener('timeupdate', videoTimeUpdate, true)
+          } else {
+            document.removeEventListener('timeupdate', videoTimeUpdate, true)
+          }
+        })
+      })
+    }
+
+    if (typeof GM_addValueChangeListener === 'function') {
+      GM_addValueChangeListener('autoscrollenabled', autoscrollenabledChanged)
+    }
 
     if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') {
       genius.style.enabled = true

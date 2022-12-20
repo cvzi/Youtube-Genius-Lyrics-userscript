@@ -1900,7 +1900,7 @@ if (document.location.hostname.startsWith('music')) {
       document.removeEventListener('yt-navigate-finish', delayedMain, false)
       document.addEventListener('yt-navigate-finish', delayedMain, false)
     }
-  
+
   genius = null
   if (isInIframe && !isRobotsTxt) {
     // do nothing

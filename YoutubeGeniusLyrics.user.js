@@ -1131,7 +1131,7 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   } catch (e) { }
 
   if (typeof videoTitle !== 'string') {
-    return
+    return null
   }
 
   console.log(`Youtube Genius Lyrics - Genre "${genre}" is found`)
@@ -1145,8 +1145,9 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   try {
     isFamilySafe = ytdAppData.playerResponse.microformat.playerMicroformatRenderer.isFamilySafe
   } catch (e) { }
-  if (isFamilySafe === false) return
+  if (isFamilySafe === false) return null // not suitable to load lyrics; isFamilySafe shall not be false for music
 
+  // traditionalYtdDescriptionInfo if ytdDescriptionInfo is not available
   const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
     ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
     : newYtdDescriptionInfo(ytdDescriptionInfo)
@@ -1195,19 +1196,25 @@ function addLyrics (force, beLessSpecific) {
     lastVideoId = tmpVideoId
 
     const pageSongInfoRes = getPageSongInfo(ytdAppData, videoDetails)
-    if (!pageSongInfoRes) return
+    // setDisableShowLyricsButton(true) might have called in getPageSongInfo
+    if (!pageSongInfoRes) {
+      // video id is known but the song info is unknown (or not suitable to show lyrics)
+      // do not load lyrics even if force = true
+      setDisableShowLyricsButton(true) // the page is loaded but no song info; disable the button
+      genius.f.hideLyricsWithMessage()
+      return
+    }
     let { songTitle, songArtistsArr, isMusic } = pageSongInfoRes
     if (force) {
       isMusic = true
       lastForceVideoId = lastVideoId
     } else if (isMusic === false && (lastForceVideoId === null || lastForceVideoId !== lastVideoId)) {
-      if (isMainCall) setDisableShowLyricsButton(false) // the media is valid but only find lyrics when the shownlyricsbutton is clicked
+      // show button if not disabled
       genius.f.hideLyricsWithMessage()
       return
     }
 
     const musicIsPlaying = isYoutubeVideoPlaying()
-    if (isMainCall) setDisableShowLyricsButton(false) // valid media
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   } catch (e) {
     // do nothing

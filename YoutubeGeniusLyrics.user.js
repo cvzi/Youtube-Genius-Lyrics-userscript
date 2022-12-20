@@ -1186,7 +1186,7 @@ function addLyrics (force, beLessSpecific) {
 }
 
 let lastPos = null
-function updateAutoScroll (video) {
+function updateAutoScroll (video, force) {
   let pos = null
   if (!video) {
     video = getYoutubeMainVideo()
@@ -1194,15 +1194,19 @@ function updateAutoScroll (video) {
   if (video) {
     pos = video.currentTime / video.duration
   }
-  if (pos !== null && pos >= 0 && lastPos !== pos) {
+  if (pos !== null && pos >= 0 && `${lastPos}` !== `${pos}`) {
     lastPos = pos
     const ct = video.currentTime
-    setTimeout(() => {
-      const ct1 = video.currentTime
-      if (ct1 - ct < 50 / 1000 && ct1 > ct) {
-        genius.f.scrollLyrics(ct1 / video.duration)
-      }
-    }, 30)
+    if (force === true) {
+      genius.f.scrollLyrics(pos)
+    } else {
+      setTimeout(() => {
+        const ct1 = video.currentTime
+        if (ct1 - ct < 50 / 1000 && ct1 > ct) {
+          genius.f.scrollLyrics(ct1 / video.duration)
+        }
+      }, 30)
+    }
   }
 }
 
@@ -1979,6 +1983,11 @@ if (document.location.hostname.startsWith('music')) {
         }
         if (data.visibility === 'loaded' && data.lyricsSuccess === true) {
           isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()
+          // 'lyricsDisplayState:loaded' is after isPageAbleForAutoScroll setup in 'iframeContentRendered'
+          if (genius.f.isScrollLyricsCallable()) {
+            // update scroll position when the iframe is rendered
+            updateAutoScroll(null, true)
+          }
         }
         lyricsDisplayState = data.visibility
         if (isScrollLyricsEnabled === true) {

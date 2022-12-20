@@ -1998,7 +1998,7 @@ if (document.location.hostname.startsWith('music')) {
       // when value is configurated in any tab, this function will be triggered in all tabs by Userscript Manager
       window.requestAnimationFrame(() => {
         // not execute for all foreground and background tabs, only execute when the tab is visibile / when the tab shows
-        genius.f.updateAutoScrollEnabled().then(()=>{
+        genius.f.updateAutoScrollEnabled().then(() => {
           let isScrollLyricsEnabled = false
           if (lyricsDisplayState === 'loaded') {
             isScrollLyricsEnabled = genius.f.isScrollLyricsEnabled()
@@ -2012,7 +2012,7 @@ if (document.location.hostname.startsWith('music')) {
       })
     }
 
-    if(typeof GM_addValueChangeListener === 'function'){
+    if (typeof GM_addValueChangeListener === 'function') {
       GM_addValueChangeListener('autoscrollenabled', autoscrollenabledChanged)
     }
 

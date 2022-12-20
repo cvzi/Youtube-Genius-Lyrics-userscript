@@ -942,6 +942,8 @@ function getMusicTitleAndAuthor (pData) {
         }
       }
     }
+  } else if (carouselLockups && carouselLockups.length > 1) {
+    setDisableShowLyricsButton(true) // one video with multiple musics
   }
   return null
 }

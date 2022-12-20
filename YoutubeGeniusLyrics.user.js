@@ -1800,6 +1800,7 @@ function delayedMain () {
   isTriggered = false
   // time allowed for other userscript(s) prepare the page
   // and also not block the page
+  window.lastFetchedQuery = null // reset search when media changed
   executeMainWhenVisible(200)
 }
 

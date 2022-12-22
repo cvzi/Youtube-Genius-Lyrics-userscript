@@ -23,17 +23,17 @@ Family of GeniusLyrics Userscripts:
 ### Screenshots:
 * 2022
 -   Default theme (Dynamic Color with YouTube Dark & Light Themes) 
-    > * *Note: YouTube is now moving forwards into the dark mode (Darker Dark Mode with Cinematic Annotations)*
-    > * *Using Light Theme is highly non-recommended*
-    > ![Screenshot as of 2022](screenshot-2022.png)
-    > ![Screenshot as of 2022 (Light)](screenshot-2022-light.png)
+    * *Note: YouTube is now moving forwards into the dark mode (Darker Dark Mode with Cinematic Annotations)*
+    * *Using Light Theme is highly non-recommended*
+    ![Screenshot as of 2022](screenshot-2022.png)
+    ![Screenshot as of 2022 (Light)](screenshot-2022-light.png)
 -   Integrated with [Tabview Youtube](https://greasyfork.org/en/scripts/428651-tabview-youtube) 
-    > * *Tabview Youtube*[(GitHub)](https://github.com/cyfung1031/Tabview-Youtube) is a userscript developed by [CY Fung](https://github.com/cyfung1031) to manage the page layout as tabs to maximize the watching experience.
-    > ![Screenshot as of 2022 with TabView Youtube](screenshot-2022-tabview-youtube.png)
+    * *Tabview Youtube*[(GitHub)](https://github.com/cyfung1031/Tabview-Youtube) is a userscript developed by [CY Fung](https://github.com/cyfung1031) to manage the page layout as tabs to maximize the watching experience.
+    ![Screenshot as of 2022 with TabView Youtube](screenshot-2022-tabview-youtube.png)
 * 2019 - 2021
 -   Default theme 
-    > ![Screenshot of youtube music video with lyrics](screenshot.png)
+    ![Screenshot of youtube music video with lyrics](screenshot.png)
 -   Dark (Spotify) theme
-    > ![Screenshot of youtube music video with lyrics (dark)](screenshot-dark(spotify).png)
+    ![Screenshot of youtube music video with lyrics (dark)](screenshot-dark(spotify).png)
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)  ![standardjs](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/workflows/standardjs/badge.svg)

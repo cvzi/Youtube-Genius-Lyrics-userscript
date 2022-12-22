@@ -902,6 +902,10 @@ function simpleTextFixup (text) {
   return text.replace(/だ/g, 'だ')
 }
 
+function titleFix (text) {
+  return text.replace(/\(([A-Za-z][a-z]+) ([Vv]ersion|[Vv]er\.?)\)/g, '($1)') // Genius Lyrics title use Ver. instead of Version; e.g. English Version
+}
+
 function getMusicTitleAndAuthor (pData) {
   const response = pData.response
   const engagementPanels = response.engagementPanels
@@ -921,7 +925,7 @@ function getMusicTitleAndAuthor (pData) {
       a1 = carouselLockups[0].carouselLockupRenderer.infoRows[0].infoRowRenderer.defaultMetadata
       a2 = carouselLockups[0].carouselLockupRenderer.infoRows[1].infoRowRenderer.defaultMetadata
     } catch (e) { }
-    a1 = getSimpleText(a1)
+    a1 = titleFix(simpleTextFixup(a1))
     a2 = getSimpleText(a2)
 
     if (a1 && a2 && typeof a1 === 'string' && typeof a2 === 'string') {

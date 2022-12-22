@@ -2068,7 +2068,7 @@ if (document.location.hostname.startsWith('music')) {
       GM_addValueChangeListener('autoscrollenabled', autoscrollenabledChanged)
     }
 
-    function styleIframeContent() {
+    function styleIframeContent () {
       if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') {
         genius.style.enabled = true
         genius.style.setup = () => {

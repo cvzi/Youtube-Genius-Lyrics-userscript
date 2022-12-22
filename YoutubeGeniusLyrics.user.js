@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.3
+// @version         10.9.4
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -925,7 +925,7 @@ function getMusicTitleAndAuthor (pData) {
       a1 = carouselLockups[0].carouselLockupRenderer.infoRows[0].infoRowRenderer.defaultMetadata
       a2 = carouselLockups[0].carouselLockupRenderer.infoRows[1].infoRowRenderer.defaultMetadata
     } catch (e) { }
-    a1 = titleFix(simpleTextFixup(a1))
+    a1 = getSimpleText(a1)
     a2 = getSimpleText(a2)
 
     if (a1 && a2 && typeof a1 === 'string' && typeof a2 === 'string') {
@@ -934,7 +934,7 @@ function getMusicTitleAndAuthor (pData) {
         title = pData.playerResponse.videoDetails.title
       } catch (e) { }
       if (title && typeof title === 'string') {
-        a1 = simpleTextFixup(a1)
+        a1 = titleFix(simpleTextFixup(a1))
         a2 = simpleTextFixup(a2)
         title = simpleTextFixup(title)
         const newValue = `${a2} ${a1}`

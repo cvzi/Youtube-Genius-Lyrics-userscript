@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.4
+// @version         10.9.5
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -58,14 +58,14 @@ function addCss () {
     #myconfigwin39457845 {
       z-index: 2060 !important;
     }
-    
+
     html {
       /* allow modification from external */
       --ygl-container-right: var(--ytd-margin-6x, 4px);
       --ygl-container-default-padding: 2px 6px;
       --ygl-spinner-color: rgb(255, 255, 100);
     }
-    
+
     #lyricscontainer {
       box-sizing: border-box;
       position: fixed;
@@ -77,25 +77,25 @@ function addCss () {
       font-size: 1.4rem;
       border: 0;
       border-radius: 0;
-    
+
       background: var(--ytd-searchbox-background);
       color: var(--ytd-searchbox-text-color);
       border: 1px solid var(--ytd-searchbox-legacy-border-color);
       padding: var(--ygl-container-default-padding);
       /* overrided by found/loading */
       line-height: 100%;
-    
+
       width: calc(var(--ygl-container-width, 324px) - var(--ytd-margin-6x, 24px) + 7px);
       right: calc(var(--ygl-container-right) - 1px);
     }
-    
+
     #lyricsiframe {
       opacity: 0.1;
       transition: opacity 2s;
       margin: 0;
       padding: 0;
     }
-    
+
     .lyricsnavbar {
       font-size: 0.83em;
       text-align: right;
@@ -110,18 +110,18 @@ function addCss () {
       align-items: center;
       align-items: stretch;
     }
-    
+
     .lyricsnavbar span {
       color: var(--yt-live-chat-primary-text-color);
       text-decoration: none;
       transition: color 400ms;
     }
-    
+
     .lyricsnavbar span:hover {
       color: var(--yt-live-chat-toast-action-color);
       text-decoration: none;
     }
-    
+
     body .loadingspinner {
       /* override .loadingspinner */
       color: currentColor;
@@ -130,13 +130,13 @@ function addCss () {
       --ygl-spinner-border-color: var(--yt-live-chat-secondary-text-color, #181818);
       border-color: var(--ygl-spinner-color) var(--ygl-spinner-border-color) var(--ygl-spinner-border-color) var(--ygl-spinner-border-color);
     }
-    
+
     .loadingspinnerholder {
       z-index: 2050;
       background-color: inherit;
       cursor: progress;
     }
-    
+
     .lorem br {
       height: 0px;
       line-height: 0;
@@ -144,7 +144,7 @@ function addCss () {
       padding: 0;
       margin: 0;
     }
-    
+
     .lorem {
       --ygl-lorem-gray: var(--yt-live-chat-disabled-icon-button-color);
       padding: 10px 0px 0px 15px;
@@ -155,28 +155,28 @@ function addCss () {
       pointer-events: none !important;
       width: 100%;
     }
-    
+
     /* this is only supported in modern browsers */
     @property --num {
       syntax: '<integer>';
       initial-value: 0;
       inherits: false;
     }
-    
+
     @keyframes loadingLorem {
       0% {
         --num: 0;
       }
-    
+
       99% {
         --num: 8;
       }
-    
+
       100% {
         --num: 0;
       }
     }
-    
+
     .lorem-scroll {
       --num: 0;
       animation: loadingLorem 4s ease infinite;
@@ -185,19 +185,19 @@ function addCss () {
       width: 96%;
       overflow: hidden;
     }
-    
+
     .lorem .white {
       background-color: inherit;
       color: white;
       user-select: none !important;
     }
-    
+
     .lorem .gray {
       background-color: var(--ygl-lorem-gray);
       color: transparent;
       user-select: none !important;
     }
-    
+
     #showlyricsbutton {
       position: fixed; /* youtube's unknown layout bug - the 'absolute' position top would offset upwards by around 80px after the page is changed */
       /* note: youtube layouts are inside ytd-watch-flexy by default; therefore the 'absolute' layout for elements outside ytd-watch-flexy is not guaranteed */
@@ -210,7 +210,7 @@ function addCss () {
       text-align: center;
       font-size: 15px;
       line-height: 14px;
-    
+
       background: #ffff64;
       color: #000a;
       padding: 9px;
@@ -221,35 +221,35 @@ function addCss () {
       contain: strict;
       opacity: 0.7;
       transition: opacity 50ms;
-    
+
       /*
         --ytd-masthead-height
-        --ytd-toolbar-height 
+        --ytd-toolbar-height
         --ytd-watch-flexy-masthead-height
         */
       top: var(--ytd-toolbar-height, var(--ytd-masthead-height, var(--ytd-watch-flexy-masthead-height, 56px)));
-    
+
     }
-    
+
     #showlyricsbutton:hover {
       opacity: 1.0;
     }
-    
+
     /* :fullscreen shall be sufficient for modern browsers */
     /* see more at https://caniuse.com/mdn-css_selectors_fullscreen */
-    
+
     :fullscreen #showlyricsbutton {
       display: none;
     }
-    
+
     :-moz-full-screen #showlyricsbutton {
       display: none;
     }
-    
+
     :-webkit-full-screen #showlyricsbutton {
       display: none;
     }
-    
+
     #showlyricsbutton::before {
       color: inherit;
       content: 'G';
@@ -259,29 +259,29 @@ function addCss () {
       user-select: none;
       touch-action: none;
     }
-    
+
     .youtube-genius-lyrics-search-container {
       border: 1px solid black;
       border-radius: 3px;
       --ygl-lyricscontainer-padding: 0px 10px;
     }
-    
+
     span.youtube-genius-lyrics-results-line-separator,
     span.youtube-genius-lyrics-found-separator {
       padding: 0px 3px;
     }
-    
+
     .youtube-genius-lyrics-results-container {
       border: 1px solid black;
       border-radius: 3px;
     }
-    
+
     ol.youtube-genius-lyrics-results-tracklist {
       list-style: none;
       width: 99%;
       font-size: 1.15em;
     }
-    
+
     li.youtube-genius-lyrics-results-li {
       cursor: pointer;
       transition: background-color 0.2s;
@@ -289,143 +289,143 @@ function addCss () {
       border-radius: 3px;
       padding: 8px 6px;
     }
-    
+
     span.youtube-genius-lyrics-results-hide-btn,
     span.youtube-genius-lyrics-results-back-btn,
     span.youtube-genius-lyrics-found-hide-btn,
     span.youtube-genius-lyrics-found-back-btn {
       cursor: pointer;
     }
-    
+
     li.youtube-genius-lyrics-results-li div.onhover {
       display: none;
       margin-top: -0.25em;
     }
-    
+
     li.youtube-genius-lyrics-results-li div.onout {
       display: block;
     }
-    
+
     li.youtube-genius-lyrics-results-li:hover div.onhover {
       display: block;
     }
-    
+
     li.youtube-genius-lyrics-results-li:hover div.onout {
       display: none;
     }
-    
+
     ol.youtube-genius-lyrics-results-tracklist {
       font-size: var(--ytd-link-font-size);
     }
-    
+
     li.youtube-genius-lyrics-results-li {
-    
+
       /* --tyt-tracklist-li-background: var(--yt-live-chat-slider-container-color); */
-    
+
       --tyt-tracklist-li-background: var(--ytd-searchbox-legacy-button-color);
-    
+
       background-color: var(--tyt-tracklist-li-background);
       color: var(--ytd-searchbox-text-color);
       border: 1px solid var(--ytd-searchbox-legacy-border-color);
       list-style: none;
-    
+
       /*
         color: var(--yt-live-chat-secondary-text-color);
-    
+
           --tyt-tracklist-li-background: var(--ytd-searchbox-legacy-button-color);
-          --tyt-tracklist-li-background: var(--yt-spec-commerce-tonal-hover);     
-    
+          --tyt-tracklist-li-background: var(--yt-spec-commerce-tonal-hover);
+
         */
-    
+
       opacity: 0.9;
     }
-    
+
     li.youtube-genius-lyrics-results-li:hover {
-    
+
       --tyt-tracklist-li-background: var(--yt-live-chat-button-dark-background-color);
       /* --tyt-tracklist-li-background: var(--yt-live-chat-slider-active-color); */
       border: 1px solid var(--ytd-searchbox-legacy-button-hover-border-color);
-    
+
       opacity: 1.0;
     }
-    
+
     li.youtube-genius-lyrics-results-li.lyrics-minor-result {
       font-size: 80%;
       opacity: 0.6;
-    
+
     }
-    
+
     li.youtube-genius-lyrics-results-li.lyrics-minor-result:hover {
       opacity: 0.7;
     }
-    
+
     li.youtube-genius-lyrics-results-li * {
       pointer-events: none;
     }
-    
+
     li.youtube-genius-lyrics-results-li div.onhover span {
       color: black;
       font-size: 2.0em;
     }
-    
+
     li.youtube-genius-lyrics-results-li div.onout span {
       font-size: 1.5em;
     }
-    
-    
+
+
     body #lyricscontainer ol.tracklist li .onhover,
     body #lyricscontainer ol.tracklist li .onout {
       display: none;
-    
+
     }
-    
-    
+
+
     body #lyricscontainer>ol.tracklist {
-    
+
       max-width: 480px;
       min-width: 280px;
       width: auto;
     }
-    
-    
+
+
     span.youtube-genius-lyrics-found-config-btn {
       cursor: pointer;
     }
-    
+
     span.youtube-genius-lyrics-found-wonglyrics-btn {
       cursor: pointer;
     }
-    
-    
+
+
     html {
       --ygl-theater-player-max-width: '--NULL--';
       --ygl-theater-player-float: '--NULL--';
     }
-    
+
     html[youtube-genius-lyrics-container="found"] ytd-watch-flexy[theater],
     html[youtube-genius-lyrics-container="loading"] ytd-watch-flexy[theater] {
       --ygl-theater-player-max-width: 50%;
       --ygl-theater-player-float: right;
     }
-    
+
     ytd-watch-flexy[theater] #movie_player .ytp-left-controls {
       max-width: var(--ygl-theater-player-max-width);
     }
-    
+
     ytd-watch-flexy[theater] #movie_player .ytp-right-controls {
       float: var(--ygl-theater-player-float);
     }
-    
+
     html[youtube-genius-lyrics-container="found"] ytd-watch-flexy[theater] #movie_player video[src],
     html[youtube-genius-lyrics-container="loading"] ytd-watch-flexy[theater] #movie_player video[src] {
       left: 0 !important;
     }
-    
+
     html[youtube-genius-lyrics-container] #showlyricsbutton {
       display: none;
     }
-    
-    
+
+
     .youtube-genius-lyrics-search-input {
       -webkit-appearance: none;
       appearance: none;
@@ -453,7 +453,7 @@ function addCss () {
     [dark] .youtube-genius-lyrics-search-input {
       border-color: transparent;
     }
-    
+
     .youtube-genius-lyrics-search-input:not(:focus)::placeholder {
       border-color: var(--yt-emoji-picker-search-placeholder-color);
       color: var(--yt-emoji-picker-search-placeholder-color);
@@ -464,12 +464,12 @@ function addCss () {
       color: var(--yt-spec-text-secondary);
       font-weight: bold;
     }
-    
+
     .youtube-genius-lyrics-search-input:focus,
     .youtube-genius-lyrics-search-input:active {
       border-color: var(--paper-checkbox-checked-color);
     }
-    
+
     span.youtube-genius-lyrics-search-search-btn {
       cursor: pointer;
       vertical-align: middle;
@@ -478,57 +478,57 @@ function addCss () {
       margin-left: 0;
       margin-right: 8px;
     }
-    
-    
-    
+
+
+
     .youtube-genius-lyrics-search-search-btn:hover {
       color: var(--yt-live-chat-toast-action-color);
     }
-    
+
     span.youtube-genius-lyrics-search-search-btn > svg {
       fill: currentColor;
       pointer-events: none;
       touch-action: none;
       user-select: none;
     }
-    
+
     @keyframes inputNoResult {
       0% {
         transform: translateX(0px);
       }
-    
+
       25% {
         transform: translateX(-6px);
       }
-    
+
       50% {
         transform: translateX(0px);
       }
-    
+
       75% {
         transform: translateX(6px);
       }
-    
+
       100% {
         transform: translateX(6px);
       }
     }
-    
+
     .youtube-genius-lyrics-search-input.lyrics-input-noresult {
       border-color: red;
       opacity: 0.75;
       animation: inputNoResult 140ms;
       animation-iteration-count: 3;
     }
-    
+
     .lyrics-searching {
       /* dont make animation here */
       filter: blur(0.7px);
       opacity: 0.85;
       pointer-events: none;
     }
-    
-    
+
+
     html {
       --ygl-lyricsiframe-flex: '--NULL--';
       --ygl-lyricscontainer-bottom: '--NULL--';
@@ -538,7 +538,7 @@ function addCss () {
       --ygl-lyricscontainer-flex-direction: '--NULL--';
       --ygl-lyricscontainer-bar-padding: '--NULL--';
     }
-    
+
 
     .youtube-genius-lyrics-loading-container,
     .youtube-genius-lyrics-found-container {
@@ -559,7 +559,7 @@ function addCss () {
     .lyricsnavbar {
       padding: var(--ygl-lyricscontainer-bar-padding);
     }
-    
+
     body #lyricscontainer {
       display: var(--ygl-lyricscontainer-display);
       flex-direction: var(--ygl-lyricscontainer-flex-direction);
@@ -567,53 +567,53 @@ function addCss () {
       border-radius: var(--ygl-lyricscontainer-border-radius);
       padding: var(--ygl-lyricscontainer-padding);
     }
-    
+
     #lyricsiframe {
       flex: var(--ygl-lyricsiframe-flex);
     }
-    
-    
-    
+
+
+
     #lyricscontainer.youtube-genius-lyrics-loading-container #lyricsiframe {
-    
+
       position: absolute;
-    
+
       width: 80%;
       height: 80%;
       transform: translate(10%, 10%);
-    
-    
+
+
     }
-    
+
     #lyricscontainer.youtube-genius-lyrics-loading-container .loadingspinnerholder {
-    
+
       position: relative;
       width: auto !important;
       top: auto !important;
-    
+
       display: flex;
       flex-direction: column;
-    
+
       align-content: center;
       align-items: center;
       justify-content: center;
-    
+
       overflow: hidden;
       contain: content;
     }
-    
-    
-    
+
+
+
     .youtube-genius-lyrics-search-container {
       --ygl-lyricscontainer-display: flex;
       --ygl-lyricscontainer-flex-direction: row;
       align-items: center;
     }
-    
+
     .youtube-genius-lyrics-results-container {
       --ygl-lyricscontainer-padding: 2px 6px 6px 6px;
     }
-    
+
     .youtube-genius-lyrics-search-hide-btn,
     .youtube-genius-lyrics-results-back-btn,
     .youtube-genius-lyrics-results-hide-btn,
@@ -627,7 +627,7 @@ function addCss () {
       transition: color 400ms;
       cursor: pointer;
     }
-    
+
     .youtube-genius-lyrics-search-hide-btn:hover,
     .youtube-genius-lyrics-results-back-btn:hover,
     .youtube-genius-lyrics-results-hide-btn:hover,
@@ -636,12 +636,12 @@ function addCss () {
       color: var(--yt-live-chat-toast-action-color);
       text-decoration: none;
     }
-    
+
     .youtube-genius-lyrics-results-line-separator {
       font-size: 0.83em;
       color: var(--yt-live-chat-primary-text-color);
     }
-    
+
     .youtube-genius-lyrics-search-label {
       font-family: cursive;
       padding: 0px 6px;
@@ -2048,7 +2048,6 @@ if (document.location.hostname.startsWith('music')) {
 
     function autoscrollenabledChanged () {
       // when value is configurated in any tab, this function will be triggered in all tabs by Userscript Manager
-      if (typeof genius.f.updateAutoScrollEnabled !== 'function') return
       window.requestAnimationFrame(() => {
         // not execute for all foreground and background tabs, only execute when the tab is visibile / when the tab shows
         genius.f.updateAutoScrollEnabled().then(() => {
@@ -2069,59 +2068,67 @@ if (document.location.hostname.startsWith('music')) {
       GM_addValueChangeListener('autoscrollenabled', autoscrollenabledChanged)
     }
 
-    if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') {
-      genius.style.enabled = true
-      genius.style.setup = () => {
-        genius.style.setup = null // run once; set variables to genius.styleProps
+    function styleIframeContent () {
+      if (genius.option.themeKey === 'genius' || genius.option.themeKey === 'geniusReact') {
+        genius.style.enabled = true
+        genius.style.setup = () => {
+          genius.style.setup = null // run once; set variables to genius.styleProps
 
-        if (genius.option.themeKey !== 'genius' && genius.option.themeKey !== 'geniusReact') return false
+          if (genius.option.themeKey !== 'genius' && genius.option.themeKey !== 'geniusReact') return false
 
-        const ytdApp = document.querySelector('ytd-app')
-        if (!ytdApp) return
+          const ytdApp = document.querySelector('ytd-app')
+          if (!ytdApp) return
 
-        const cStyle = window.getComputedStyle(ytdApp)
-        let background = cStyle.getPropertyValue('--yt-spec-base-background')
-        let color = cStyle.getPropertyValue('--yt-spec-text-primary')
-        // let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
-        // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
-        let fontSize = null
-        let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
-        const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
+          const cStyle = window.getComputedStyle(ytdApp)
+          let background = cStyle.getPropertyValue('--yt-spec-base-background')
+          let color = cStyle.getPropertyValue('--yt-spec-text-primary')
+          // let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
+          // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
+          let fontSize = null
+          let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
+          const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
 
-        const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
-        if (expander) {
-          fontSize = window.getComputedStyle(expander).fontSize
-        } else {
-          fontSize = cStyle.fontSize
+          const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
+          if (expander) {
+            fontSize = window.getComputedStyle(expander).fontSize
+          } else {
+            fontSize = cStyle.fontSize
+          }
+          if (typeof background === 'string' && typeof color === 'string' && background.length > 3 && color.length > 3) {
+            // do nothing
+          } else {
+            background = null
+            color = null
+          }
+
+          if (typeof fontSize === 'string' && fontSize.length > 2) {
+            // do nothing
+          } else {
+            fontSize = null
+          }
+          if (typeof slbc === 'string') {
+            // do nothing
+          } else {
+            slbc = null
+          }
+
+          Object.assign(genius.styleProps, {
+            '--egl-background': (background === null ? '' : `${background}`),
+            '--egl-color': (color === null ? '' : `${color}`),
+            '--egl-font-size': (fontSize === null ? '' : `${fontSize}`),
+            '--egl-infobox-background': (slbc === null ? '' : `${slbc}`),
+            '--egl-link-color': (`${linkColor}`)
+          })
+          return true
         }
-        if (typeof background === 'string' && typeof color === 'string' && background.length > 3 && color.length > 3) {
-          // do nothing
-        } else {
-          background = null
-          color = null
-        }
-
-        if (typeof fontSize === 'string' && fontSize.length > 2) {
-          // do nothing
-        } else {
-          fontSize = null
-        }
-        if (typeof slbc === 'string') {
-          // do nothing
-        } else {
-          slbc = null
-        }
-
-        Object.assign(genius.styleProps, {
-          '--egl-background': (background === null ? '' : `${background}`),
-          '--egl-color': (color === null ? '' : `${color}`),
-          '--egl-font-size': (fontSize === null ? '' : `${fontSize}`),
-          '--egl-infobox-background': (slbc === null ? '' : `${slbc}`),
-          '--egl-link-color': (`${linkColor}`)
-        })
-        return true
+      } else {
+        genius.style.enabled = false
+        genius.style.setup = null
       }
     }
+
+    genius.onThemeChanged && genius.onThemeChanged.push(styleIframeContent)
+    styleIframeContent()
 
     Object.assign(genius.minimizeHit, {
       noImageURL: true,

@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.5
+// @version         10.9.6
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1252,7 +1252,17 @@ async function updateAutoScroll (video, force) {
         return // invalid timechange
       }
     }
-    pos += (1.8 / duration) * pos // end scrolling earlier than video end by 1.8s; the scrollbar will disappear at the end of music
+    if (duration > 15) { // skip for music <= 15s
+      // p0 = (d-k)/d
+      // p1 = p0 + (m/d)*p0
+      // p1 = d/d = 1
+      // 1 - (d-k)/d = (m/d) * p0
+      // k/d = m*p0/d
+      // m = k/p0 = kd/(d-k)
+      const k = 1.95
+      const m = k * duration / (duration - k)
+      pos += (m / duration) * pos // end scrolling earlier than video end by ${k}s; the scrollbar will disappear at the end of music
+    }
     genius.f.scrollLyrics(pos)
   }
 }

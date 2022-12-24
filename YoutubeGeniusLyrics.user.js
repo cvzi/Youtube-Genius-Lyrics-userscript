@@ -1252,7 +1252,7 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
     return 3 * A * t * t + 2 * B * t + C
   }
 
-  /* eslint-enable camelcase */
+  /* eslint-disable camelcase */
   const w_n1 = w(-1, p1.x, p2.x)
   const w_p1 = w(1, p1.x, p2.x)
   const w_p2 = w(2, p1.x, p2.x)
@@ -1263,14 +1263,14 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
   /* eslint-enable camelcase */
 
   // Ax^3. Bx^2. Cx + 0
-  // -1: -A + B - C 
+  // -1: -A + B - C
   // 1: A + B + C
-  // 2: 8A + 4B + 2C 
+  // 2: 8A + 4B + 2C
 
   // Ax^3 + Bx^2 + Cx + 0 = s
-  //  Ax^3 + Bx^2 + Cx - s = 0
+  // Ax^3 + Bx^2 + Cx - s = 0
 
-  /* eslint-enable camelcase */
+  /* eslint-disable camelcase */
   return function cbpt (s) {
     if (s >= 0) {
       // do nothing

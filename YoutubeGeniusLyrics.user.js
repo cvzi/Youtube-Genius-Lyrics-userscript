@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name            Youtube Genius Lyrics
+// @namespace       https://greasyfork.org/users/20068
 // @description     Shows lyrics/songtexts from genius.com on Youtube next to music videos
 // @description:es  Mostra la letra de genius.com de las canciones en Youtube junto a los vídeos musicales
 // @description:de  Zeigt den Songtext von genius.com neben Musikvideos auf Youtube

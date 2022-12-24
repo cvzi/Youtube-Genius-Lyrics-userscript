@@ -1019,7 +1019,7 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
     .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
   // .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, ' ') // Symbols and Punctuation
     .replace(/【([^【】]+)】/g, '[$1]')
-    .replace(/\(([^\(\)]+)\)/g, '[$1]')
+    .replace(/\(([^()]+)\)/g, '[$1]')
     .replace(/\[(MV|PV)\]/g, '')
 
   if (videoDetails && videoDetails.keywords && videoDetails.keywords.length > 2) {
@@ -1039,10 +1039,11 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
       // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
       // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
       if (mainwords2.length === 2) {
-        if (newTitle.indexOf(mainwords2[0]) < newTitle.indexOf(mainwords2[1]))
+        if (newTitle.indexOf(mainwords2[0]) < newTitle.indexOf(mainwords2[1])) {
           songTitle = `${mainwords2[0]} ${mainwords2[1]}`
-        else
+        } else {
           songTitle = `${mainwords2[1]} ${mainwords2[0]}`
+        }
       }
     }
   }

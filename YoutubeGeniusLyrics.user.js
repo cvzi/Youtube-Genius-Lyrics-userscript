@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.8
+// @version         10.9.9
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1229,40 +1229,124 @@ function addLyrics (force, beLessSpecific) {
 }
 
 let lastPos = null
+function cubicBezier (p1x, p1y, p2x, p2y) {
+  const p1 = {
+    x: p1x,
+    y: p1y
+  }
+  const p2 = {
+    x: p2x,
+    y: p2y
+  }
+
+  function w (t, u0, u1) {
+    const f = 1 - t
+    return 3 * f * f * t * u0 + 3 * f * t * t * u1 + t * t * t
+  }
+
+  function v (t, A, B, C) {
+    return A * t * t * t + B * t * t + C * t
+  }
+
+  function vp (t, A, B, C) {
+    return 3 * A * t * t + 2 * B * t + C
+  }
+
+  /* eslint-disable camelcase */
+  const w_n1 = w(-1, p1.x, p2.x)
+  const w_p1 = w(1, p1.x, p2.x)
+  const w_p2 = w(2, p1.x, p2.x)
+  const w_B = (w_n1 + w_p1) / 2
+  const w_6A2B = w_p2 - 2 * w_p1 // 8-2; 4-2; 2-2
+  const w_A = (w_6A2B - 2 * w_B) / 6
+  const w_C = w_p1 - w_A - w_B
+  /* eslint-enable camelcase */
+
+  // Ax^3. Bx^2. Cx + 0
+  // -1: -A + B - C
+  // 1: A + B + C
+  // 2: 8A + 4B + 2C
+
+  // Ax^3 + Bx^2 + Cx + 0 = s
+  // Ax^3 + Bx^2 + Cx - s = 0
+
+  /* eslint-disable camelcase */
+  return function cbpt (s) {
+    if (s >= 0) {
+      // do nothing
+    } else {
+      return null
+    }
+    if (s < 0 || s > 1) return null
+    let t = 0.5
+    let u
+    let i = 0
+    while (i < 2) {
+      const dt = (v(t, w_A, w_B, w_C) - s) / (vp(t, w_A, w_B, w_C))
+      t -= dt
+      if (i > 0 && u < 0 && t < 0) {
+        // do nothing
+      } else if (i > 0 && u > 1 && t > 1) {
+        // do nothing
+      } else if (dt * dt < 0.00001) {
+        i++
+      }
+      u = t
+    }
+    return w(t, p1.y, p2.y)
+  }
+  /* eslint-enable camelcase */
+}
+
+// https://cubic-bezier.com/#
+const cbLyricsTime = cubicBezier(.21, .08, .42, .66) /* eslint-disable-line no-floating-decimal */
+// the adjustment is based on typical JPOP songs:
+// 美波「カワキヲアメク」MV https://www.youtube.com/watch?v=0YF8vecQWYs
+// GHOST / 星街すいせい(official) https://www.youtube.com/watch?v=IKKar5SS29E
+
+// at the begining, slower to suit either with or without verse.
+// for verse at the beginning, the lyrics will be upshifted for the first sentence
+// for without verse at the beginning, the singer would not sing in a very fast pace, so it can be slowed down
+// it usually singing ends before the media ends. it might be pure music to make listeners relax the emotion.
+// the lyrics shall be ahead the timeline a bit
+
+// verse at the middle would not affect much. It will be equvalent to ~3 lines scrolling.
+// Usually there is blank line and new line with the word "[verse]" such that the scrolling will still match the lyrics
+
+let isUpdateAutoScrollBusy = false
 async function updateAutoScroll (video, force) {
+  if (isUpdateAutoScrollBusy) return
   if (isTriggered !== true) return // not ready
   if (!genius.current.artists || !genius.current.title) return // not ready
   if (!video) {
     video = getYoutubeMainVideo()
     if (!video) return
   }
+  isUpdateAutoScrollBusy = true
   const { currentTime, duration } = video
   let pos = currentTime / duration
   if (pos >= 0) {
     // do nothing
   } else {
+    isUpdateAutoScrollBusy = false
     return // invalid currentTime or duration
   }
   if (`${lastPos}` !== `${pos}`) {
     lastPos = pos
-    const ct = currentTime
+    let ct = currentTime
     if (force !== true) {
       await new Promise(resolve => window.setTimeout(resolve, 30))
       const ct1 = video.currentTime
       if (`${video.duration}` === `${duration}` && ((ct1 - ct < 50 / 1000 && ct1 > ct) || `${ct1}` === `${ct}`)) {
         // if the video is playing or stopped, without change of media
-        pos = ct1 / duration
+        ct = ct1
+        pos = ct / duration
       } else {
+        isUpdateAutoScrollBusy = false
         return // invalid timechange
       }
     }
     if (duration > 15) { // skip for music <= 15s
-      // p0 = (d-k)/d
-      // p1 = p0 + (m/d)*p0
-      // p1 = d/d = 1
-      // 1 - (d-k)/d = (m/d) * p0
-      // k/d = m*p0/d
-      // m = k/p0 = kd/(d-k)
       let k = 1.95 // the scrollbar will just disappear at the end of music
       if (duration > 80) {
         k = 3.21 // the singer shall stop a bit eariler than the media ends
@@ -1270,11 +1354,31 @@ async function updateAutoScroll (video, force) {
           k = 4.82
         }
       }
-      const m = k * duration / (duration - k)
-      pos += (m / duration) * pos // end scrolling earlier than video end by ${k}s; the scrollbar will disappear at the end of music
+      // p0 = (d-k)/d
+      // p1 = p0 + (m/d)*p0
+      // p1 = d/d = 1
+      // 1 - (d-k)/d = (m/d) * p0
+      // k/d = m*p0/d
+      // m = k/p0 = kd/(d-k)
+      const m = k * duration / (duration - k) // offset at pos = 1.0
+      const timelineOffset = m * pos // end scrolling earlier than video end by ${k}s; the scrollbar will disappear at the end of music
+      ct += timelineOffset
+      if (ct < 0) ct = 0
+      if (ct > duration) ct = duration
+      // ct=0; ct'=0
+      // ct=y; ct'=y
+      let cbFactor = 1.0
+      if (ct > 0 && ct < duration) {
+        const s = ct / duration // (0,1)
+        const s1 = await cbLyricsTime(s) // (0,1)
+        cbFactor = s1 / s
+      }
+      pos = ct / duration * cbFactor
     }
     genius.f.scrollLyrics(pos)
   }
+  await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
+  isUpdateAutoScrollBusy = false
 }
 
 function safeString (s) {
@@ -1402,8 +1506,7 @@ function showSearchField (query) {
   ])
   document.body.appendChild(b)
 
-  /* eslint-disable no-new */
-  new Promise(() => {
+  new Promise(() => { /* eslint-disable-line no-new */
     input.focus()
   })
 }
@@ -1526,8 +1629,7 @@ function formatPageViews (stats) {
 
 async function rememberLyricsSelection (title, artists, hit) {
   // in order to call "genius.f.rememberLyricsSelection(title, artists, jsonHit)", use async call to get jsonHit
-  /* eslint-disable no-new */
-  const jsonHit = await new Promise(function (resolve) {
+  const jsonHit = await new Promise(function (resolve) { /* eslint-disable-line no-new */
     // this is not a complete async function, but it helps not to block the scripting
     resolve(JSON.stringify(hit))
   })

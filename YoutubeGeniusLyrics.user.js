@@ -1239,19 +1239,20 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
     y: p2y
   }
 
-  function w(t, u0, u1) {
+  function w (t, u0, u1) {
     const f = 1 - t
     return 3 * f * f * t * u0 + 3 * f * t * t * u1 + t * t * t
   }
 
-  function v(t, A, B, C) {
+  function v (t, A, B, C) {
     return A * t * t * t + B * t * t + C * t
   }
 
-  function vp(t, A, B, C) {
+  function vp (t, A, B, C) {
     return 3 * A * t * t + 2 * B * t + C
   }
 
+  /* eslint-enable camelcase */
   const w_n1 = w(-1, p1.x, p2.x)
   const w_p1 = w(1, p1.x, p2.x)
   const w_p2 = w(2, p1.x, p2.x)
@@ -1259,6 +1260,7 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
   const w_6A2B = w_p2 - 2 * w_p1 // 8-2; 4-2; 2-2
   const w_A = (w_6A2B - 2 * w_B) / 6
   const w_C = w_p1 - w_A - w_B
+  /* eslint-enable camelcase */
 
   // Ax^3. Bx^2. Cx + 0
   // -1: -A + B - C 
@@ -1268,20 +1270,19 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
   // Ax^3 + Bx^2 + Cx + 0 = s
   //  Ax^3 + Bx^2 + Cx - s = 0
 
-  return function cbpt(s) {
-
+  /* eslint-enable camelcase */
+  return function cbpt (s) {
     if (s >= 0) {
       // do nothing
     } else {
       return null
     }
     if (s < 0 || s > 1) return null
-
     let t = 0.5
     let u
     let i = 0
     while (i < 2) {
-      let dt = (v(t, w_A, w_B, w_C) - s) / (vp(t, w_A, w_B, w_C))
+      const dt = (v(t, w_A, w_B, w_C) - s) / (vp(t, w_A, w_B, w_C))
       t -= dt
       if (i > 0 && u < 0 && t < 0) {
         // do nothing
@@ -1294,10 +1295,11 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
     }
     return w(t, p1.y, p2.y)
   }
+  /* eslint-enable camelcase */
 }
 
 // https://cubic-bezier.com/#
-const cbLyricsTime = cubicBezier(.21, .08, .42, .66)
+const cbLyricsTime = cubicBezier(.21, .08, .42, .66) /* eslint-disable-line no-floating-decimal */
 // the adjustment is based on typical JPOP songs:
 // 美波「カワキヲアメク」MV https://www.youtube.com/watch?v=0YF8vecQWYs
 // GHOST / 星街すいせい(official) https://www.youtube.com/watch?v=IKKar5SS29E
@@ -1346,13 +1348,10 @@ async function updateAutoScroll (video, force) {
     }
     if (duration > 15) { // skip for music <= 15s
       let k = 1.95 // the scrollbar will just disappear at the end of music
-      let y = 3
       if (duration > 80) {
         k = 3.21 // the singer shall stop a bit eariler than the media ends
-        y = 9
         if (duration > 160) {
           k = 4.82
-          y = 15
         }
       }
       // p0 = (d-k)/d
@@ -1378,7 +1377,7 @@ async function updateAutoScroll (video, force) {
     }
     genius.f.scrollLyrics(pos)
   }
-  await new Promise(requestAnimationFrame) /* eslint-disable-line no-new */
+  await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
   isUpdateAutoScrollBusy = false
 }
 

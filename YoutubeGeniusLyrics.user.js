@@ -13,7 +13,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.6
+// @version         10.9.7
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1228,6 +1228,8 @@ function addLyrics (force, beLessSpecific) {
 
 let lastPos = null
 async function updateAutoScroll (video, force) {
+  if (isTriggered !== true) return // not ready
+  if (!genius.current.artists || !genius.current.title) return // not ready
   if (!video) {
     video = getYoutubeMainVideo()
     if (!video) return
@@ -1259,7 +1261,13 @@ async function updateAutoScroll (video, force) {
       // 1 - (d-k)/d = (m/d) * p0
       // k/d = m*p0/d
       // m = k/p0 = kd/(d-k)
-      const k = 1.95
+      let k = 1.95 // the scrollbar will just disappear at the end of music
+      if (duration > 80) {
+        k = 3.21 // the singer shall stop a bit eariler than the media ends
+        if (duration > 160) {
+          k = 4.82
+        }
+      }
       const m = k * duration / (duration - k)
       pos += (m / duration) * pos // end scrolling earlier than video end by ${k}s; the scrollbar will disappear at the end of music
     }
@@ -1828,10 +1836,15 @@ function executeMainWhenVisible (t) {
   }
 }
 function delayedMain () {
+  if (genius && genius.current) {
+    genius.current.artists = null
+    genius.current.title = null
+  }
   isTriggered = false
   // time allowed for other userscript(s) prepare the page
   // and also not block the page
   window.lastFetchedQuery = null // reset search when media changed
+  genius.f.hideLyricsWithMessage()
   executeMainWhenVisible(200)
 }
 

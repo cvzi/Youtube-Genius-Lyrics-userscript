@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.7
+// @version         10.9.8
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1016,11 +1016,12 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 
   songTitle = songTitle.replace(/\s+/, ' ')
   songTitle = simpleTextFixup(songTitle)
-  songTitle = songTitle.replace(/\(.+?\)/g, '')
-  songTitle = songTitle.replace(/\[.+?\]/g, '')
   songTitle = songTitle.replace(/\b(PERFORMANCE VIDEO|official mv|karaoke mv|official|music mv|audio|music|video|karaoke)\b/gi, '')
+  songTitle = songTitle.replace(/\(\s*\)|\[\s*\]/g, '')
   songTitle = songTitle.replace(/exclusive\s*-?/gi, '')
   songTitle = songTitle.replace(/-\s*-/gi, ' - ')
+  songTitle = songTitle.replace(/([\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F\s])(MV|PV)\s*$/g, '$1')
+  songTitle = songTitle.replace(/^\s*(MV|PV)([\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F\s])/g, '$2')
   songTitle = songTitle.trim()
 
   // Pattern: Artist  - Song title

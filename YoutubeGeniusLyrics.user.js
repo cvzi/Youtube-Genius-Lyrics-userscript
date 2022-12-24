@@ -1227,27 +1227,33 @@ function addLyrics (force, beLessSpecific) {
 }
 
 let lastPos = null
-function updateAutoScroll (video, force) {
-  let pos = null
+async function updateAutoScroll (video, force) {
   if (!video) {
     video = getYoutubeMainVideo()
+    if (!video) return
   }
-  if (video) {
-    pos = video.currentTime / video.duration
+  const { currentTime, duration } = video
+  let pos = currentTime / duration
+  if (pos >= 0) {
+    // do nothing
+  } else {
+    return // invalid currentTime or duration
   }
-  if (pos !== null && pos >= 0 && `${lastPos}` !== `${pos}`) {
+  if (`${lastPos}` !== `${pos}`) {
     lastPos = pos
-    const ct = video.currentTime
-    if (force === true) {
-      genius.f.scrollLyrics(pos)
-    } else {
-      setTimeout(() => {
-        const ct1 = video.currentTime
-        if (ct1 - ct < 50 / 1000 && ct1 > ct) {
-          genius.f.scrollLyrics(ct1 / video.duration)
-        }
-      }, 30)
+    const ct = currentTime
+    if (force !== true) {
+      await new Promise(resolve => window.setTimeout(resolve, 30))
+      const ct1 = video.currentTime
+      if (`${video.duration}` === `${duration}` && ((ct1 - ct < 50 / 1000 && ct1 > ct) || `${ct1}` === `${ct}`)) {
+        // if the video is playing or stopped, without change of media
+        pos = ct1 / duration
+      } else {
+        return // invalid timechange
+      }
     }
+    pos += (1.8 / duration) * pos // end scrolling earlier than video end by 1.8s; the scrollbar will disappear at the end of music
+    genius.f.scrollLyrics(pos)
   }
 }
 

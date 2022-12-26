@@ -1011,7 +1011,7 @@ function keywordProcess (title, keywords, kHash) {
     }
     const keyword = keywordObj
     const upperKeyword = keyword.toUpperCase()
-    if (!upperTitle.includes(upperKeyword)) return false;
+    if (!upperTitle.includes(upperKeyword)) return false
     let type = kHash.get(keyword)
     if (!type) {
       type = 1
@@ -1033,12 +1033,13 @@ function keywordProcess (title, keywords, kHash) {
     } else if (type === 7) {
       return (new RegExp(`\\b${keyword}\\b`, 'i')).test(title)
     }
+    return false
   })
 }
 
 function makeKeyWords (keywords, songTitle) {
   keywords = [...keywords]
-  songTitle.replace(/\[([^\[\]]+)\]/g, (m, a) => {
+  songTitle.replace(/\[([^[\]]+)\]/g, (m, a) => {
     if (a !== a.trim()) return
     keywords.push(a)
   })
@@ -1047,13 +1048,13 @@ function makeKeyWords (keywords, songTitle) {
   let newKeyWords = []
   const upperSongTitle = songTitle.toUpperCase()
   for (let keyword of keywords) {
-    if (skipNexts.has(keyword)) continue;
+    if (skipNexts.has(keyword)) continue
     const upperKeyWord = keyword.toUpperCase()
-    let j = upperSongTitle.indexOf(upperKeyWord)
-    if (j < 0) continue;
-    if (upperKeyWord === 'MV' || upperKeyWord === 'PV' || upperKeyWord === 'SONG' || upperKeyWord === 'MUSIC') continue;
+    const j = upperSongTitle.indexOf(upperKeyWord)
+    if (j < 0) continue
+    if (upperKeyWord === 'MV' || upperKeyWord === 'PV' || upperKeyWord === 'SONG' || upperKeyWord === 'MUSIC') continue
     keyword = songTitle.substring(j, j + keyword.length)
-    let r = { keyword, upperKeyWord, splitLen: songTitle.split(keyword).length, isBracketed: false, foundAt: j }
+    const r = { keyword, upperKeyWord, splitLen: songTitle.split(keyword).length, isBracketed: false, foundAt: j }
     if (j >= 1) {
       r.isBracketed = songTitle.charAt(j - 1) === '[' && songTitle.charAt(j + keyword.length) === ']'
     }
@@ -1066,7 +1067,7 @@ function makeKeyWords (keywords, songTitle) {
   for (const keyword1 of newKeyWords) {
     for (const keyword2 of newKeyWords) {
       if (keyword1.keyword.length > keyword2.keyword.length) {
-        if (keyword1.splitLen !== keyword2.splitLen) continue;
+        if (keyword1.splitLen !== keyword2.splitLen) continue
         if (keyword1.upperKeyWord.includes(keyword2.upperKeyWord)) {
           isSkipped = true
           keyword2.skip = true
@@ -1088,7 +1089,7 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
     .replace(/[\s\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
   // .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, ' ') // Symbols and Punctuation
-    .replace(/\│/g, '|')
+    .replace(/│/g, '|')
     .replace(/【([^【】]+)】/g, '[$1]')
     .replace(/\(([^()]+)\)/g, '[$1]')
     .replace(/『([^『』]+)』/g, '[$1]')
@@ -1104,7 +1105,7 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   }
 
   for (let s of songTitle.split('|')) {
-    //『チェンソーマン』第９話ノンクレジットエンディング / CHAINSAW MAN #9 Ending│Aimer「Deep down」
+    // 『チェンソーマン』第９話ノンクレジットエンディング / CHAINSAW MAN #9 Ending│Aimer「Deep down」
     s = s.trim()
     variants.add(s)
   }
@@ -1113,39 +1114,39 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   let variantsX = new Map()
   if (videoDetails && videoDetails.keywords && videoDetails.keywords.length > 2) {
     let kHash = new Map()
-    let mainwords = keywordProcess(songTitle, videoDetails.keywords, kHash)
+    const mainwords = keywordProcess(songTitle, videoDetails.keywords, kHash)
     kHash.clear()
     kHash = null
     if (mainwords.length > 2) {
       const vKeywords = makeKeyWords(mainwords, songTitle)
       console.log(vKeywords)
       for (const variant of variants) {
-        let mainwords = keywordProcess(variant, vKeywords, null)
+        const mainwords = keywordProcess(variant, vKeywords, null)
         let kMatch = 0
         let kBracket = 0
         for (const keywordObj of mainwords) {
           kMatch++
           if (keywordObj.isBracketed) kBracket++
         }
-      // console.log(22,variant,kMatch, kBracket, mainwords)
+        // console.log(22,variant,kMatch, kBracket, mainwords)
 
         // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
         // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
-          if(kMatch === 2 || kMatch -kBracket === 2){
-          let m = kMatch === 2 ? mainwords : mainwords.filter(entry=>!entry.isBracketed)
-          let p = `${m[0].keyword} ${m[1].keyword}`
-          let lastAdded = variantsX.get(p)
-          if (!lastAdded || (lastAdded && lastAdded.variant.length > variant.length)) variantsX.set(p, {variant, kMatch, kBracket}) // store the shortest match
+        if (kMatch === 2 || kMatch - kBracket === 2) {
+          const m = kMatch === 2 ? mainwords : mainwords.filter(entry => !entry.isBracketed)
+          const p = `${m[0].keyword} ${m[1].keyword}`
+          const lastAdded = variantsX.get(p)
+          if (!lastAdded || (lastAdded && lastAdded.variant.length > variant.length)) variantsX.set(p, { variant, kMatch, kBracket }) // store the shortest match
         }
       }
     }
   }
-  if (variantsX.size == 1) {
+  if (variantsX.size === 1) {
     const values = [...variantsX.keys()]
     window.defaultSongTitle = songTitle = values[0]
   } else if (variantsX.size > 1) {
-    let entries = [...variantsX.entries()]
-    entries.sort((a, b) => { (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket) })
+    const entries = [...variantsX.entries()]
+    entries.sort((a, b) => (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket))
     if (entries[0][1].kMatch > entries[1][1].kMatch) {
       window.defaultSongTitle = songTitle = entries[0][0]
     }
@@ -2296,11 +2297,11 @@ if (document.location.hostname.startsWith('music')) {
             if (data.visibility === 'loaded') {
               c.classList.add('youtube-genius-lyrics-found-container')
               document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
-                if(genius.current.artists && genius.current.title){
-                    if(genius.current.artists.includes(genius.current.title)) window.lastFetchedQuery =genius.current.artists
-                    else if (genius.current.title.includes(genius.current.artists)) window.lastFetchedQuery =genius.current.title
-              else window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
-                }
+              if (genius.current.artists && genius.current.title) {
+                if (genius.current.artists.includes(genius.current.title)) window.lastFetchedQuery = genius.current.artists
+                else if (genius.current.title.includes(genius.current.artists)) window.lastFetchedQuery = genius.current.title
+                else window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
+              }
             } else {
               document.documentElement.removeAttribute('youtube-genius-lyrics-container') // ???
             }

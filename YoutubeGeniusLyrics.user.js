@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.13
+// @version         10.9.14
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -2445,8 +2445,7 @@ if (document.location.hostname.startsWith('music')) {
       }
     }
 
-    genius.onThemeChanged && genius.onThemeChanged.push(styleIframeContent)
-    styleIframeContent()
+    genius.onThemeChanged.push(styleIframeContent)
 
     Object.assign(genius.minimizeHit, {
       noImageURL: true,

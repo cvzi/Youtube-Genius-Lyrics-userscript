@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.12
+// @version         10.9.13
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1049,6 +1049,7 @@ function makeKeyWords (keywords, songTitle) {
   const upperSongTitle = songTitle.toUpperCase()
   for (let keyword of keywords) {
     if (skipNexts.has(keyword)) continue
+    keyword = keyword.replace(/[\t\r\n]+/g, ' ')
     const upperKeyWord = keyword.toUpperCase()
     const j = upperSongTitle.indexOf(upperKeyWord)
     if (j < 0) continue
@@ -1080,7 +1081,7 @@ function makeKeyWords (keywords, songTitle) {
   return newKeyWords
 }
 
-function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
+async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   let songArtists
   let songTitle = videoTitle
 
@@ -1120,41 +1121,51 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
     if (mainwords.length > 2) {
       const vKeywords = makeKeyWords(mainwords, songTitle)
       console.log(vKeywords)
-      for (const variant of variants) {
-        const mainwords = keywordProcess(variant, vKeywords, null)
-        let kMatch = 0
-        let kBracket = 0
-        for (const keywordObj of mainwords) {
-          kMatch++
-          if (keywordObj.isBracketed) kBracket++
-        }
-        // console.log(22,variant,kMatch, kBracket, mainwords)
+      await Promise.all(variants.map(variant => {
+        return new Promise(resolve => {
+          const mainwords = keywordProcess(variant, vKeywords, null)
+          let kMatch = 0
+          let kBracket = 0
+          for (const keywordObj of mainwords) {
+            kMatch++
+            if (keywordObj.isBracketed) kBracket++
+          }
+          // console.log(22,variant,kMatch, kBracket, mainwords)
 
-        // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
-        // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
-        if (kMatch === 2 || kMatch - kBracket === 2) {
-          const m = kMatch === 2 ? mainwords : mainwords.filter(entry => !entry.isBracketed)
-          const p = `${m[0].keyword} ${m[1].keyword}`
-          const lastAdded = variantsX.get(p)
-          if (!lastAdded || (lastAdded && lastAdded.variant.length > variant.length)) variantsX.set(p, { variant, kMatch, kBracket }) // store the shortest match
-        }
-      }
+          // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
+          // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
+          if (kMatch === 2 || kMatch - kBracket === 2) {
+            const m = kMatch === 2 ? mainwords : mainwords.filter(entry => !entry.isBracketed)
+            const p = `${m[0].keyword}\t${m[1].keyword}`
+            const lastAdded = variantsX.get(p)
+            if (!lastAdded || (lastAdded && lastAdded.variant.length > variant.length)) variantsX.set(p, { variant, kMatch, kBracket }) // store the shortest match
+          }
+          resolve(0)
+        })
+      }))
     }
   }
+  let wSongTitle = null
   if (variantsX.size === 1) {
     const values = [...variantsX.keys()]
-    window.defaultSongTitle = songTitle = values[0]
+    wSongTitle = values[0]
   } else if (variantsX.size > 1) {
     const entries = [...variantsX.entries()]
     entries.sort((a, b) => (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket))
     if (entries[0][1].kMatch > entries[1][1].kMatch) {
-      window.defaultSongTitle = songTitle = entries[0][0]
+      wSongTitle = entries[0][0]
     }
   }
   variants.length = 0
   variantsX.clear()
   variants = null
   variantsX = null
+
+  if (wSongTitle !== null) {
+    const m = wSongTitle.split('\t')
+    window.defaultSongTitle = `${m[0]} ${m[1]}`
+    return { songTitle: wSongTitle, songArtistsArr: null }
+  }
 
   // Symbols and Punctuation can be part of the artist name (e.g. &TEAM, milli-billi)
   songTitle = simpleTextFixup(songTitle)
@@ -1210,11 +1221,11 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 }
 
 function newYtdDescriptionInfo (ytdDescriptionInfo) {
-  const songArtistsArr = [ytdDescriptionInfo.singer]
-  // const songArtists = ytdDescriptionInfo.singer
-  const songTitle = ytdDescriptionInfo.song.replace('(Karaoke)', '')
+  let song = ytdDescriptionInfo.song
+  const singer = ytdDescriptionInfo.singer
+  song = song.replace('(Karaoke)', '')
   // return object result
-  return { songTitle, songArtistsArr }
+  return { songTitle: `${singer}\t${song}`, songArtistsArr: null }
 }
 
 function getYtdAppData () {
@@ -1258,7 +1269,7 @@ function getVideoInfo (ytdAppData) {
   return videoDetails // could be null
 }
 
-function getPageSongInfo (ytdAppData, videoDetails) {
+async function getPageSongInfo (ytdAppData, videoDetails) {
   let isMusic = false
   let ytdDescriptionInfo = null
   let videoTitle = null
@@ -1299,7 +1310,7 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   window.defaultSongTitle = null
   // traditionalYtdDescriptionInfo if ytdDescriptionInfo is not available
   const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
-    ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
+    ? await traditionalYtdDescriptionInfo(videoTitle, videoDetails)
     : newYtdDescriptionInfo(ytdDescriptionInfo)
 
   // console.log(window.defaultSongTitle)
@@ -1316,38 +1327,40 @@ function setDisableShowLyricsButton (newValue) {
   // note: setting to false would not immediately generate the button
 }
 
-function addLyrics (force, beLessSpecific) {
+let mPageSongInfoPromise = null
+
+async function addLyrics (force, beLessSpecific) {
   const isMainCall = arguments.length === 0
   if (isMainCall) setDisableShowLyricsButton(false) // reset to false for every addLyrics()
   try {
-    // ytd application data
-    const ytdAppData = getYtdAppData()
-    if (!ytdAppData) return // rarely happen; only if addLyrics triggered when the page is still loading
-    if (ytdAppData.page !== 'watch') {
-      // Not a video page or video page not visible
-      lastVideoId = null
-      if (isMainCall) setDisableShowLyricsButton(true) // no button if the page is confirmed as non-video page like 'browse', 'search'
-      genius.f.hideLyricsWithMessage()
-      return
+    const pRes = await Promise.race([mPageSongInfoPromise])
+    if (!pRes) return // unknown error
+    switch (pRes.status) {
+      case -1: // rarely happen; only if addLyrics triggered when the page is still loading
+        return
+      case -2: // Not a video page or video page not visible
+        lastVideoId = null
+        if (isMainCall) setDisableShowLyricsButton(true) // no button if the page is confirmed as non-video page like 'browse', 'search'
+        genius.f.hideLyricsWithMessage()
+        return
+      case -3: // no video details or videoId
+        lastVideoId = null
+        if (isMainCall) setDisableShowLyricsButton(false) // try to get page info again when user clicks the button
+        else if (force === true) setDisableShowLyricsButton(true) // no video details when the button is clicked
+        genius.f.hideLyricsWithMessage()
+        return
+      default:
+      // do nothing
     }
 
-    // ytd video data
-    const videoDetails = getVideoInfo(ytdAppData)
-    if (!videoDetails || !videoDetails.videoId) {
-      lastVideoId = null
-      if (isMainCall) setDisableShowLyricsButton(false) // try to get page info again when user clicks the button
-      else if (force === true) setDisableShowLyricsButton(true) // no video details when the button is clicked
-      genius.f.hideLyricsWithMessage()
-      return
-    }
-    const tmpVideoId = `${videoDetails.videoId}${genius.option.themeKey}`
+    const tmpVideoId = `${pRes.videoId}${genius.option.themeKey}`
     if (lastVideoId === tmpVideoId && document.getElementById('lyricscontainer')) {
       // Same video id and same theme and lyrics are showing -> stop here
       return
     }
     lastVideoId = tmpVideoId
 
-    const pageSongInfoRes = getPageSongInfo(ytdAppData, videoDetails)
+    const pageSongInfoRes = pRes.pageSongInfoRes // can be null
     // setDisableShowLyricsButton(true) might have called in getPageSongInfo
     if (!pageSongInfoRes) {
       // video id is known but the song info is unknown (or not suitable to show lyrics)
@@ -1462,7 +1475,7 @@ let isUpdateAutoScrollBusy = false
 async function updateAutoScroll (video, force) {
   if (isUpdateAutoScrollBusy) return
   if (isTriggered !== true) return // not ready
-  if (!genius.current.artists || !genius.current.title) return // not ready
+  if (!genius.current.compoundTitle) return // not ready
   if (!video) {
     video = getYoutubeMainVideo()
     if (!video) return
@@ -1678,7 +1691,7 @@ function onLyricsFoundBackToSearchClick (ev) {
   if (document.querySelector('.loadingspinnerholder') !== null) {
     genius.f.cancelLoading()
   }
-  genius.f.forgetLyricsSelection(genius.current.title, genius.current.artists)
+  genius.f.forgetLyricsSelection(genius.current.compoundTitle, null)
   showSearchField()
 }
 
@@ -1798,11 +1811,10 @@ function onLyricsResultsTrackListClick (ev) {
   if (element.nodeName === 'LI') {
     const hit = getHitOfElement(element)
     if (hit !== null) {
-      const title = genius.current.title
-      const artists = genius.current.artists
+      const compoundTitle = genius.current.compoundTitle
       const searchresultsLengths = tracklist.querySelectorAll('li').length
       genius.f.showLyrics(hit, searchresultsLengths)
-      rememberLyricsSelection(title, artists, hit)
+      rememberLyricsSelection(compoundTitle, null, hit)
     }
   }
 }
@@ -2054,6 +2066,7 @@ function main () {
     // avoid iframe communcation error
     return
   }
+  mPageSongInfoPromise = null
 
   let ytdAppData = getYtdAppData()
   if (!ytdAppData) {
@@ -2066,6 +2079,27 @@ function main () {
     return
   }
   ytdAppData = null
+
+  mPageSongInfoPromise = new Promise(resolve => {
+    // ytd application data
+    const ytdAppData = getYtdAppData()
+    if (!ytdAppData) return resolve({ status: -1 }) // rarely happen; only if addLyrics triggered when the page is still loading
+    if (ytdAppData.page !== 'watch') {
+      // Not a video page or video page not visible
+      return resolve({ status: -2 })
+    }
+
+    // ytd video data
+    const videoDetails = getVideoInfo(ytdAppData)
+    if (!videoDetails || !videoDetails.videoId) {
+      return resolve({ status: -3 })
+    }
+
+    getPageSongInfo(ytdAppData, videoDetails).then(pageSongInfoRes => {
+      // pageSongInfoRes can be null
+      resolve({ status: 1, pageSongInfoRes, videoId: videoDetails.videoId })
+    })
+  })
 
   if (genius.option.autoShow) {
     addLyrics()
@@ -2089,8 +2123,7 @@ function executeMainWhenVisible (t) {
 }
 function delayedMain () {
   if (genius && genius.current) {
-    genius.current.artists = null
-    genius.current.title = null
+    genius.current.compoundTitle = null
   }
   isTriggered = false
   // time allowed for other userscript(s) prepare the page
@@ -2297,10 +2330,8 @@ if (document.location.hostname.startsWith('music')) {
             if (data.visibility === 'loaded') {
               c.classList.add('youtube-genius-lyrics-found-container')
               document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
-              if (genius.current.artists && genius.current.title) {
-                if (genius.current.artists.includes(genius.current.title)) window.lastFetchedQuery = genius.current.artists
-                else if (genius.current.title.includes(genius.current.artists)) window.lastFetchedQuery = genius.current.title
-                else window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
+              if (genius.current.compoundTitle) {
+                window.lastFetchedQuery = `${genius.current.compoundTitle}`
               }
             } else {
               document.documentElement.removeAttribute('youtube-genius-lyrics-container') // ???

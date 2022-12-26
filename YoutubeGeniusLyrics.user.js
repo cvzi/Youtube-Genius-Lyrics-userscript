@@ -1002,11 +1002,82 @@ function isYoutubeVideoPlaying () {
   }
 }
 
-function keywordProcess (title, keywords) {
-  return keywords.filter(keyword => {
-    if (/^[a-zA-Z]+$/.test(keyword)) return (new RegExp(`\\b${keyword}\\b`)).test(title)
-    return title.includes(keyword)
+function keywordProcess (title, keywords, kHash) {
+  const upperTitle = title.toUpperCase()
+  return keywords.filter(keywordObj => {
+    if (typeof keywordObj === 'object') {
+      const keyword = keywordObj.keyword
+      return title.includes(keyword)
+    }
+    const keyword = keywordObj
+    const upperKeyword = keyword.toUpperCase()
+    if (!upperTitle.includes(upperKeyword)) return false
+    let type = kHash.get(keyword)
+    if (!type) {
+      type = 1
+      if (/^[a-zA-Z]+$/.test(keyword)) {
+        type = 3
+        let ignoreCase = false
+        if (keyword.length > 1) {
+          if ((keyword === keyword.toLowerCase() || keyword === keyword.toUpperCase())) ignoreCase = true
+          else if ((keyword === keyword.charAt(0).toUpperCase() + keyword.substring(1).toLowerCase())) ignoreCase = true
+        }
+        if (ignoreCase) type = 7
+      }
+      kHash.set(keyword, type)
+    }
+    if (type === 1) {
+      return title.includes(keyword)
+    } else if (type === 3) {
+      return (new RegExp(`\\b${keyword}\\b`)).test(title)
+    } else if (type === 7) {
+      return (new RegExp(`\\b${keyword}\\b`, 'i')).test(title)
+    }
+    return false
   })
+}
+
+function makeKeyWords (keywords, songTitle) {
+  keywords = [...keywords]
+  songTitle.replace(/\[([^[\]]+)\]/g, (m, a) => {
+    if (a !== a.trim()) return
+    keywords.push(a)
+  })
+  keywords.sort((a, b) => a.length - b.length)
+  let skipNexts = new Set()
+  let newKeyWords = []
+  const upperSongTitle = songTitle.toUpperCase()
+  for (let keyword of keywords) {
+    if (skipNexts.has(keyword)) continue
+    const upperKeyWord = keyword.toUpperCase()
+    const j = upperSongTitle.indexOf(upperKeyWord)
+    if (j < 0) continue
+    if (upperKeyWord === 'MV' || upperKeyWord === 'PV' || upperKeyWord === 'SONG' || upperKeyWord === 'MUSIC') continue
+    keyword = songTitle.substring(j, j + keyword.length)
+    const r = { keyword, upperKeyWord, splitLen: songTitle.split(keyword).length, isBracketed: false, foundAt: j }
+    if (j >= 1) {
+      r.isBracketed = songTitle.charAt(j - 1) === '[' && songTitle.charAt(j + keyword.length) === ']'
+    }
+    skipNexts.add(keyword)
+    newKeyWords.push(r)
+  }
+  skipNexts.clear()
+  skipNexts = null
+  let isSkipped = false
+  for (const keyword1 of newKeyWords) {
+    for (const keyword2 of newKeyWords) {
+      if (keyword1.keyword.length > keyword2.keyword.length) {
+        if (keyword1.splitLen !== keyword2.splitLen) continue
+        if (keyword1.upperKeyWord.includes(keyword2.upperKeyWord)) {
+          isSkipped = true
+          keyword2.skip = true
+        }
+      }
+    }
+  }
+  if (isSkipped) newKeyWords = newKeyWords.filter(entry => !entry.skip)
+  newKeyWords.sort((a, b) => a.foundAt - b.foundAt)
+  return newKeyWords
 }
 
 function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
@@ -1016,37 +1087,74 @@ function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   // song title text processing
   songTitle = songTitle
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
-    .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
+    .replace(/[\s\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex
   // .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, ' ') // Symbols and Punctuation
+    .replace(/│/g, '|')
     .replace(/【([^【】]+)】/g, '[$1]')
     .replace(/\(([^()]+)\)/g, '[$1]')
+    .replace(/『([^『』]+)』/g, '[$1]')
+    .replace(/「([^「」]+)」/g, '[$1]')
     .replace(/\[(MV|PV)\]/g, '')
 
-  if (videoDetails && videoDetails.keywords && videoDetails.keywords.length > 2) {
-    const mainwords = keywordProcess(songTitle, videoDetails.keywords)
-    let newTitle = songTitle
-    if (mainwords.length > 2) {
-      for (const s of mainwords) {
-        let count = 4
-        while (count-- > 0) {
-          const pTitleLen = newTitle.length
-          newTitle = newTitle.replace(`[${s}]`, '')
-          if (pTitleLen === newTitle.length) break
-        }
-      }
-      const mainwords2 = keywordProcess(newTitle, videoDetails.keywords)
+  let variants = new Set()
+  variants.add(songTitle.trim())
 
-      // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
-      // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
-      if (mainwords2.length === 2) {
-        if (newTitle.indexOf(mainwords2[0]) < newTitle.indexOf(mainwords2[1])) {
-          songTitle = `${mainwords2[0]} ${mainwords2[1]}`
-        } else {
-          songTitle = `${mainwords2[1]} ${mainwords2[0]}`
+  for (let s of songTitle.split('/')) {
+    s = s.trim()
+    variants.add(s)
+  }
+
+  for (let s of songTitle.split('|')) {
+    // 『チェンソーマン』第９話ノンクレジットエンディング / CHAINSAW MAN #9 Ending│Aimer「Deep down」
+    s = s.trim()
+    variants.add(s)
+  }
+
+  variants = [...variants.keys()]
+  let variantsX = new Map()
+  if (videoDetails && videoDetails.keywords && videoDetails.keywords.length > 2) {
+    let kHash = new Map()
+    const mainwords = keywordProcess(songTitle, videoDetails.keywords, kHash)
+    kHash.clear()
+    kHash = null
+    if (mainwords.length > 2) {
+      const vKeywords = makeKeyWords(mainwords, songTitle)
+      console.log(vKeywords)
+      for (const variant of variants) {
+        const mainwords = keywordProcess(variant, vKeywords, null)
+        let kMatch = 0
+        let kBracket = 0
+        for (const keywordObj of mainwords) {
+          kMatch++
+          if (keywordObj.isBracketed) kBracket++
+        }
+        // console.log(22,variant,kMatch, kBracket, mainwords)
+
+        // 【MV】迷星叫 / MyGO!!!!!【オリジナル楽曲】
+        // 【歌ってみた】大脳的なランデブー / Covered by 花鋏キョウ【Kanaria】
+        if (kMatch === 2 || kMatch - kBracket === 2) {
+          const m = kMatch === 2 ? mainwords : mainwords.filter(entry => !entry.isBracketed)
+          const p = `${m[0].keyword} ${m[1].keyword}`
+          const lastAdded = variantsX.get(p)
+          if (!lastAdded || (lastAdded && lastAdded.variant.length > variant.length)) variantsX.set(p, { variant, kMatch, kBracket }) // store the shortest match
         }
       }
     }
   }
+  if (variantsX.size === 1) {
+    const values = [...variantsX.keys()]
+    window.defaultSongTitle = songTitle = values[0]
+  } else if (variantsX.size > 1) {
+    const entries = [...variantsX.entries()]
+    entries.sort((a, b) => (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket))
+    if (entries[0][1].kMatch > entries[1][1].kMatch) {
+      window.defaultSongTitle = songTitle = entries[0][0]
+    }
+  }
+  variants.length = 0
+  variantsX.clear()
+  variants = null
+  variantsX = null
 
   // Symbols and Punctuation can be part of the artist name (e.g. &TEAM, milli-billi)
   songTitle = simpleTextFixup(songTitle)
@@ -1188,11 +1296,14 @@ function getPageSongInfo (ytdAppData, videoDetails) {
   } catch (e) { }
   if (isFamilySafe === false) return null // not suitable to load lyrics; isFamilySafe shall not be false for music
 
+  window.defaultSongTitle = null
   // traditionalYtdDescriptionInfo if ytdDescriptionInfo is not available
   const { songTitle, songArtistsArr } = (ytdDescriptionInfo === null)
     ? traditionalYtdDescriptionInfo(videoTitle, videoDetails)
     : newYtdDescriptionInfo(ytdDescriptionInfo)
 
+  // console.log(window.defaultSongTitle)
+  // if (!isMusic && window.defaultSongTitle) isMusic = true
   return { songTitle, songArtistsArr, isMusic }
 }
 
@@ -1258,7 +1369,7 @@ function addLyrics (force, beLessSpecific) {
     const musicIsPlaying = isYoutubeVideoPlaying()
     genius.f.loadLyrics(force, beLessSpecific, songTitle, songArtistsArr, musicIsPlaying)
   } catch (e) {
-    // do nothing
+    console.warn(e)
   }
 }
 
@@ -1424,10 +1535,13 @@ async function performSearch () {
     const container = document.querySelector('#lyricscontainer.youtube-genius-lyrics-search-container')
     const input = document.querySelector('input.youtube-genius-lyrics-search-input')
     if (!container || !input) return
+
+    let inputValue = input.value
     if (!input.value) {
-      input.value = safeString(window.lastFetchedQuery)
+      inputValue = safeString(window.lastUserInput) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
+    } else {
+      window.lastUserInput = inputValue
     }
-    const inputValue = input.value
     if (inputValue) {
       try {
         input.blur()
@@ -1515,7 +1629,7 @@ function showSearchField (query) {
   const configButton = createConfigBtn('youtube-genius-lyrics-search-config-btn')
 
   input.value = safeString(query) || ''
-  const fetechQuery = safeString(window.lastFetchedQuery)
+  const fetechQuery = safeString(window.lastUserInput) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
   input.placeholder = fetechQuery || `${genius.option.defaultPlaceholder}`
   input.classList.toggle('placeholder-lastfetch', !!fetechQuery)
 
@@ -1867,7 +1981,7 @@ function textSlash (text) {
       return String.fromCharCode(m.charCodeAt(0) - 65248)
     })
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
-    .replace(/[\s/\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') /* spacing */ // eslint-disable-line no-control-regex
+    .replace(/[\s\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, '/') /* spacing */ // eslint-disable-line no-control-regex
     .replace(/[\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F]+/g, '/') // Symbols and Punctuation
     .replace(/\/+/g, '/')
   let s = text.split('/')
@@ -1982,6 +2096,8 @@ function delayedMain () {
   // time allowed for other userscript(s) prepare the page
   // and also not block the page
   window.lastFetchedQuery = null // reset search when media changed
+  window.lastUserInput = null
+  window.defaultSongTitle = null
   genius.f.hideLyricsWithMessage()
   executeMainWhenVisible(200)
 }
@@ -2181,7 +2297,11 @@ if (document.location.hostname.startsWith('music')) {
             if (data.visibility === 'loaded') {
               c.classList.add('youtube-genius-lyrics-found-container')
               document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
-              window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
+              if (genius.current.artists && genius.current.title) {
+                if (genius.current.artists.includes(genius.current.title)) window.lastFetchedQuery = genius.current.artists
+                else if (genius.current.title.includes(genius.current.artists)) window.lastFetchedQuery = genius.current.title
+                else window.lastFetchedQuery = `${genius.current.artists} ${genius.current.title}`
+              }
             } else {
               document.documentElement.removeAttribute('youtube-genius-lyrics-container') // ???
             }

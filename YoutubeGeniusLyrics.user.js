@@ -1429,29 +1429,44 @@ function cubicBezier (p1x, p1y, p2x, p2y) {
   // Ax^3 + Bx^2 + Cx - s = 0
 
   /* eslint-disable camelcase */
+  let last_s = null
+  let last_t = null
+  let last_kvp = null
   return function cbpt (s) {
-    if (s >= 0) {
-      // do nothing
+    if (s > 0 && s < 1) {
+      let t = s // guess t0=s instead of t0=0.5
+      if (last_s !== null) {
+        // t_n = t_n-1 - (kv - s) / kvp = t_n-1 - kv / kvp + s / kvp
+        // t'_0 = t_n-1 - (kv - s') / kvp = t_n-1 - kv / kvp + s' / kvp
+        // t'_0 = t_n - s / kvp + s' / kvp = t_n + (s' - s) / kvp
+        t = last_t + (s - last_s) / last_kvp
+      }
+      let u
+      let i = 0
+      let kvp = 0.0
+      while (i < 2) {
+        const kv = v(t, w_A, w_B, w_C)
+        kvp = vp(t, w_A, w_B, w_C)
+        const dt = (kv - s) / kvp
+        t -= dt
+        if (i > 0 && u < 0 && t < 0) {
+          // do nothing
+        } else if (i > 0 && u > 1 && t > 1) {
+          // do nothing
+        } else if (dt * dt < 0.00001) {
+          i++
+        }
+        u = t
+      }
+      last_t = t
+      last_s = s
+      last_kvp = kvp
+      return w(t, p1.y, p2.y)
+    } else if (s >= 0 && s <= 1) { // avoid equal comparision for floating values
+      return s
     } else {
       return null
     }
-    if (s < 0 || s > 1) return null
-    let t = 0.5
-    let u
-    let i = 0
-    while (i < 2) {
-      const dt = (v(t, w_A, w_B, w_C) - s) / (vp(t, w_A, w_B, w_C))
-      t -= dt
-      if (i > 0 && u < 0 && t < 0) {
-        // do nothing
-      } else if (i > 0 && u > 1 && t > 1) {
-        // do nothing
-      } else if (dt * dt < 0.00001) {
-        i++
-      }
-      u = t
-    }
-    return w(t, p1.y, p2.y)
   }
   /* eslint-enable camelcase */
 }

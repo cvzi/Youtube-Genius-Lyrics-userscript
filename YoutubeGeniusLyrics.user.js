@@ -2131,16 +2131,17 @@ function actionAddLyricsOrButton () {
 }
 
 let isTriggered = false
-async function executeMainWhenVisible (t) {
-  if (isTriggered) return
-  await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
-  if (isTriggered) return
+async function executeMainWhenVisible (t, mPageLoadId) {
+  if (isTriggered || mPageLoadId !== pageLoadId) return
   await new Promise(resolve => setTimeout(resolve, t)) /* eslint-disable-line no-new */
-  if (isTriggered) return
+  if (isTriggered || mPageLoadId !== pageLoadId) return
   isTriggered = true
   actionAddLyricsOrButton()
 }
+let pageLoadId = 0
 function delayedMain () {
+  pageLoadId++
+  if (pageLoadId > 1e9) pageLoadId = 9
   if (genius && genius.current) {
     genius.current.compoundTitle = null
   }
@@ -2150,11 +2151,14 @@ function delayedMain () {
   window.lastFetchedQuery = null // reset search when media changed
   window.lastUserInput = null
   window.defaultSongTitle = null
-  setTimeout(() => {
+  const mPageLoadId = pageLoadId
+  window.requestAnimationFrame(() => {
+    if (mPageLoadId !== pageLoadId) return
+    // only execute in foreground tab
     genius.f.hideLyricsWithMessage()
     readPageSongInfo()
-    executeMainWhenVisible(200)
-  }, 40)
+    executeMainWhenVisible(200, mPageLoadId)
+  })
 }
 
 function newAppHint (status) {
@@ -2281,7 +2285,11 @@ function entryPoint () {
         // do nothing
       }
       : function setupMain () {
-        executeMainWhenVisible(600)
+        const mPageLoadId = pageLoadId
+        window.requestAnimationFrame(() => {
+          if (mPageLoadId !== pageLoadId) return
+          executeMainWhenVisible(600, mPageLoadId)
+        })
         document.removeEventListener('yt-navigate-finish', delayedMain, false)
         document.addEventListener('yt-navigate-finish', delayedMain, false)
       }
@@ -2383,10 +2391,19 @@ function entryPoint () {
       if (!statusCheck()) return
       let video = ((ev || 0).target || 0)
       if (video.nodeName === 'VIDEO' && video.matches('#movie_player video[src]')) {
-        window.setTimeout(() => {
-          statusCheck() && isVideoPlaying(video) && actionAddLyricsOrButton()
-          video = null
-        }, 600)
+        const mPageLoadId = pageLoadId
+        window.requestAnimationFrame(() => {
+          if (mPageLoadId !== pageLoadId) {
+            video = null
+            return
+          }
+          window.setTimeout(() => {
+            if (mPageLoadId === pageLoadId) {
+              statusCheck() && isVideoPlaying(video) && actionAddLyricsOrButton()
+            }
+            video = null
+          }, 600)
+        })
       }
     }, true)
 

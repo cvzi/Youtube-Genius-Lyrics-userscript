@@ -1566,7 +1566,7 @@ async function performSearch () {
 
     let inputValue = input.value
     if (!input.value) {
-      inputValue = safeString(window.lastUserInput) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
+      inputValue = placeholderValue()
     } else {
       window.lastUserInput = inputValue
     }
@@ -1642,6 +1642,10 @@ function onSearchLyricsHideBtnClick (ev) {
   genius.f.hideLyricsWithMessage()
 }
 
+function placeholderValue () {
+  return safeString(window.lastUserInputConfirmed) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
+}
+
 function showSearchField (query) {
   const spanLabel = document.createElement('span')
   spanLabel.classList.add('youtube-genius-lyrics-search-label')
@@ -1664,7 +1668,10 @@ function showSearchField (query) {
   const configButton = createConfigBtn('youtube-genius-lyrics-search-config-btn')
 
   input.value = safeString(query) || ''
-  const fetechQuery = safeString(window.lastUserInput) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
+  if (typeof window.lastUserInput === 'string' && !input.value) {
+    input.value = safeString(window.lastUserInput) || ''
+  }
+  const fetechQuery = placeholderValue()
   input.placeholder = fetechQuery || `${genius.option.defaultPlaceholder}`
   input.classList.toggle('placeholder-lastfetch', !!fetechQuery)
 
@@ -1829,6 +1836,10 @@ function onLyricsResultsTrackListClick (ev) {
   if (element.nodeName === 'LI') {
     const hit = getHitOfElement(element)
     if (hit !== null) {
+      if (typeof window.lastUserInput === 'string') {
+        window.lastUserInputConfirmed = window.lastUserInput
+        window.lastUserInput = null
+      }
       const compoundTitle = genius.current.compoundTitle
       const searchresultsLengths = tracklist.querySelectorAll('li').length
       genius.f.showLyrics(hit, searchresultsLengths)
@@ -2150,6 +2161,7 @@ function delayedMain () {
   // and also not block the page
   window.lastFetchedQuery = null // reset search when media changed
   window.lastUserInput = null
+  window.lastUserInputConfirmed = null
   window.defaultSongTitle = null
   const mPageLoadId = pageLoadId
   window.requestAnimationFrame(() => {

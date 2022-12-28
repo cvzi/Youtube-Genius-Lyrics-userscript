@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.20
+// @version         10.9.21
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -2115,6 +2115,7 @@ async function readPageSongInfo () {
   } else if (ytdAppData.page !== 'watch' || !isYtdAppReady()) {
     // ytdApp is initized but the pagetype or video info not exist
     // (youtube web app page to 'search' or 'browse')
+    setDisableShowLyricsButton(true)
     genius.f.hideLyricsWithMessage()
     return
   }
@@ -2137,20 +2138,25 @@ async function readPageSongInfo () {
 
     getPageSongInfo(ytdAppData, videoDetails).then(pageSongInfoRes => {
       // pageSongInfoRes can be null
+      setDisableShowLyricsButton(false)
       resolve({ status: 1, pageSongInfoRes, videoId: videoDetails.videoId })
     })
   })
 }
-function actionAddLyricsOrButton () {
+async function actionAddLyricsOrButton () {
   if (lyricsDisplayState === 'loading') {
     // avoid iframe communcation error
     return
   }
-  if (genius.option.autoShow) {
-    addLyrics()
-  } else {
-    addLyricsButton()
+  let mPageSongInfoRes = await mPageSongInfoPromise
+  if (mPageSongInfoRes && mPageSongInfoRes.status === 1) {
+    if (genius.option.autoShow) {
+      addLyrics()
+    } else {
+      addLyricsButton()
+    }
   }
+  mPageSongInfoRes = null
 }
 
 let isTriggered = false

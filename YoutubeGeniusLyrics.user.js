@@ -2083,7 +2083,6 @@ function main () {
   // do nothing
 }
 async function readPageSongInfo () {
-
   mPageSongInfoPromise = null
 
   let ytdAppData = getYtdAppData()
@@ -2154,11 +2153,11 @@ function delayedMain () {
   window.lastFetchedQuery = null // reset search when media changed
   window.lastUserInput = null
   window.defaultSongTitle = null
-  setTimeout(()=>{
+  setTimeout(() => {
     genius.f.hideLyricsWithMessage()
     readPageSongInfo()
     executeMainWhenVisible(200)
-  },40)
+  }, 40)
 }
 
 function newAppHint (status) {

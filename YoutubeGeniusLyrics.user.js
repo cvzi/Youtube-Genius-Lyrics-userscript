@@ -2357,7 +2357,7 @@ function entryPoint () {
               c.classList.add('youtube-genius-lyrics-found-container')
               document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
               if (genius.current.compoundTitle) {
-                window.lastFetchedQuery = `${genius.current.compoundTitle}`
+                window.lastFetchedQuery = `${genius.current.compoundTitle.replace('\t', ' ')}`
               }
             } else {
               document.documentElement.removeAttribute('youtube-genius-lyrics-container') // ???

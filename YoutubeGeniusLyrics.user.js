@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.18
+// @version         10.9.19
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1641,10 +1641,8 @@ function onSearchLyricsSearchBtnClick (ev) {
 
 function hideLyricsWithMessageAndStopAutoShow () {
   if (genius.option.autoShow === true) {
-    let lyricsiframe = document.querySelector('iframe#lyricsiframe')
-    // lyricsiframe.offsetHeight > 0 to check whether it is visible or not
-    if (lyricsiframe && lyricsiframe.offsetHeight > 0) genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
-    lyricsiframe = null
+    const isLyricsPanelShown = lyricsDisplayState === 'loading' || lyricsDisplayState === 'loaded'
+    if (isLyricsPanelShown) genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
   }
   genius.f.hideLyricsWithMessage()
 }

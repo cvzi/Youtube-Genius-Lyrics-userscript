@@ -1567,6 +1567,7 @@ async function performSearch () {
     let inputValue = input.value
     if (!input.value) {
       inputValue = placeholderValue()
+      window.lastUserInput = null
     } else {
       window.lastUserInput = inputValue
     }

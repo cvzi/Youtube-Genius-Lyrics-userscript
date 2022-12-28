@@ -1571,9 +1571,16 @@ async function performSearch () {
       window.lastUserInput = inputValue
     }
     if (inputValue) {
+      if (document.querySelector('.loadingspinnerholder') !== null) {
+        genius.f.cancelLoading()
+      }
+      if (typeof genius.current.compoundTitle === 'string') {
+        genius.f.forgetLyricsSelection(genius.current.compoundTitle, null)
+      }
       try {
         input.blur()
       } catch (e) { }
+      await Promise.resolve(0)
       container.classList.add('lyrics-searching')
       genius.f.searchByQuery(inputValue, container, (res) => {
         let c = document.querySelector('#lyricscontainer')
@@ -1703,10 +1710,6 @@ function onLyricsFoundHideBtnClick (ev) {
 }
 
 function onLyricsFoundBackToSearchClick (ev) {
-  if (document.querySelector('.loadingspinnerholder') !== null) {
-    genius.f.cancelLoading()
-  }
-  genius.f.forgetLyricsSelection(genius.current.compoundTitle, null)
   showSearchField()
 }
 
@@ -2077,10 +2080,10 @@ function autoSelectLyrics (hits) {
 }
 
 function main () {
-  if (lyricsDisplayState === 'loading') {
-    // avoid iframe communcation error
-    return
-  }
+  // do nothing
+}
+async function readPageSongInfo () {
+
   mPageSongInfoPromise = null
 
   let ytdAppData = getYtdAppData()
@@ -2115,7 +2118,12 @@ function main () {
       resolve({ status: 1, pageSongInfoRes, videoId: videoDetails.videoId })
     })
   })
-
+}
+function actionAddLyricsOrButton () {
+  if (lyricsDisplayState === 'loading') {
+    // avoid iframe communcation error
+    return
+  }
   if (genius.option.autoShow) {
     addLyrics()
   } else {
@@ -2131,7 +2139,7 @@ function executeMainWhenVisible (t) {
       setTimeout(() => {
         if (isTriggered) return
         isTriggered = true
-        main()
+        actionAddLyricsOrButton()
       }, t)
     })
   }
@@ -2146,8 +2154,11 @@ function delayedMain () {
   window.lastFetchedQuery = null // reset search when media changed
   window.lastUserInput = null
   window.defaultSongTitle = null
-  genius.f.hideLyricsWithMessage()
-  executeMainWhenVisible(200)
+  setTimeout(()=>{
+    genius.f.hideLyricsWithMessage()
+    readPageSongInfo()
+    executeMainWhenVisible(200)
+  },40)
 }
 
 function newAppHint (status) {
@@ -2372,10 +2383,11 @@ if (document.location.hostname.startsWith('music')) {
       }
     })
     document.addEventListener('play', function (ev) {
-      if (((ev || 0).target || 0).nodeName === 'VIDEO' && ev.target.matches('#movie_player video[src]')) {
-        if (lyricsDisplayState === 'hidden') {
-          window.setTimeout(main, 600)
-        }
+      const statusCheck = () => isTriggered && lyricsDisplayState === 'hidden' && ((genius || 0).option || 0).autoShow
+      if (statusCheck() && ((ev || 0).target || 0).nodeName === 'VIDEO' && ev.target.matches('#movie_player video[src]')) {
+        window.setTimeout(() => {
+          statusCheck() && actionAddLyricsOrButton()
+        }, 600)
       }
     }, true)
 

@@ -1640,10 +1640,11 @@ function onSearchLyricsSearchBtnClick (ev) {
 }
 
 function hideLyricsWithMessageAndStopAutoShow () {
-  if (genius.option.autoShow) {
+  if (genius.option.autoShow === true) {
     let lyricsiframe = document.querySelector('iframe#lyricsiframe')
-    // document.querySelector('iframe#lyricsiframe').offsetHeight > 0 to check whether it is visible or not
+    // lyricsiframe.offsetHeight > 0 to check whether it is visible or not
     if (lyricsiframe && lyricsiframe.offsetHeight > 0) genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
+    lyricsiframe = null
   }
   genius.f.hideLyricsWithMessage()
 }

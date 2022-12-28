@@ -1571,9 +1571,16 @@ async function performSearch () {
       window.lastUserInput = inputValue
     }
     if (inputValue) {
+      if (document.querySelector('.loadingspinnerholder') !== null) {
+        genius.f.cancelLoading()
+      }
+      if (typeof genius.current.compoundTitle === 'string') {
+        genius.f.forgetLyricsSelection(genius.current.compoundTitle, null)
+      }
       try {
         input.blur()
       } catch (e) { }
+      await Promise.resolve(0)
       container.classList.add('lyrics-searching')
       genius.f.searchByQuery(inputValue, container, (res) => {
         let c = document.querySelector('#lyricscontainer')
@@ -1703,10 +1710,6 @@ function onLyricsFoundHideBtnClick (ev) {
 }
 
 function onLyricsFoundBackToSearchClick (ev) {
-  if (document.querySelector('.loadingspinnerholder') !== null) {
-    genius.f.cancelLoading()
-  }
-  genius.f.forgetLyricsSelection(genius.current.compoundTitle, null)
   showSearchField()
 }
 
@@ -2077,10 +2080,9 @@ function autoSelectLyrics (hits) {
 }
 
 function main () {
-  if (lyricsDisplayState === 'loading') {
-    // avoid iframe communcation error
-    return
-  }
+  // do nothing
+}
+async function readPageSongInfo () {
   mPageSongInfoPromise = null
 
   let ytdAppData = getYtdAppData()
@@ -2115,7 +2117,12 @@ function main () {
       resolve({ status: 1, pageSongInfoRes, videoId: videoDetails.videoId })
     })
   })
-
+}
+function actionAddLyricsOrButton () {
+  if (lyricsDisplayState === 'loading') {
+    // avoid iframe communcation error
+    return
+  }
   if (genius.option.autoShow) {
     addLyrics()
   } else {
@@ -2124,17 +2131,14 @@ function main () {
 }
 
 let isTriggered = false
-function executeMainWhenVisible (t) {
-  if (!isTriggered) {
-    window.requestAnimationFrame(() => {
-      if (isTriggered) return
-      setTimeout(() => {
-        if (isTriggered) return
-        isTriggered = true
-        main()
-      }, t)
-    })
-  }
+async function executeMainWhenVisible (t) {
+  if (isTriggered) return
+  await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
+  if (isTriggered) return
+  await new Promise(resolve => setTimeout(resolve, t)) /* eslint-disable-line no-new */
+  if (isTriggered) return
+  isTriggered = true
+  actionAddLyricsOrButton()
 }
 function delayedMain () {
   if (genius && genius.current) {
@@ -2146,15 +2150,16 @@ function delayedMain () {
   window.lastFetchedQuery = null // reset search when media changed
   window.lastUserInput = null
   window.defaultSongTitle = null
-  genius.f.hideLyricsWithMessage()
-  executeMainWhenVisible(200)
+  setTimeout(() => {
+    genius.f.hideLyricsWithMessage()
+    readPageSongInfo()
+    executeMainWhenVisible(200)
+  }, 40)
 }
 
 function newAppHint (status) {
   // TODO should this be removed in favor of a README hint in the next version?
-  if (document.location.pathname === '/robots.txt') {
-    return
-  }
+
   if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
     // Other script already running
     return GM.setValue('newapphint', -1)
@@ -2258,31 +2263,30 @@ function newAppHint (status) {
   }
 }
 
-if (document.location.hostname.startsWith('music')) {
-  GM.getValue('newapphint', 0).then(function (status) {
-    window.setTimeout(() => newAppHint(status), 5000)
-  })
-} else {
+function entryPoint () {
+  genius = null
   let isInIframe = null
   try {
     isInIframe = top && window && top.constructor.name === 'Window' && window.constructor.name === 'Window' && top !== window
   } catch (e) { }
   const isRobotsTxt = document.location.href.indexOf('robots.txt') >= 0
-
-  const setupMain = isRobotsTxt
-    ? function setupMain () {
-      // do nothing
-    }
-    : function setupMain () {
-      executeMainWhenVisible(600)
-      document.removeEventListener('yt-navigate-finish', delayedMain, false)
-      document.addEventListener('yt-navigate-finish', delayedMain, false)
-    }
-
-  genius = null
-  if (isInIframe && !isRobotsTxt) {
-    // do nothing
+  if (document.location.hostname.startsWith('music')) {
+    if (isRobotsTxt || isInIframe) return
+    GM.getValue('newapphint', 0).then(function (status) {
+      window.setTimeout(() => newAppHint(status), 5000)
+    })
   } else {
+    const setupMain = isRobotsTxt
+      ? function setupMain () {
+        // do nothing
+      }
+      : function setupMain () {
+        executeMainWhenVisible(600)
+        document.removeEventListener('yt-navigate-finish', delayedMain, false)
+        document.addEventListener('yt-navigate-finish', delayedMain, false)
+      }
+    if (isInIframe && !isRobotsTxt) return
+
     // should it be required for robots.txt as well?? can remove??
     genius = geniusLyrics({
       GM,
@@ -2309,9 +2313,8 @@ if (document.location.hostname.startsWith('music')) {
       iframeLoadedCallback2,
       autoSelectLyrics
     })
-  }
 
-  if (isRobotsTxt === false && genius !== null && genius.option) {
+    if (isRobotsTxt !== false || genius === null || !genius.option) return
     GM.registerMenuCommand(SCRIPT_NAME + ' - Show lyrics', () => addLyrics(true))
 
     function videoTimeUpdate (ev) {
@@ -2371,11 +2374,19 @@ if (document.location.hostname.startsWith('music')) {
         }
       }
     })
+
+    function isVideoPlaying (video) {
+      return video.currentTime > 0 && !video.paused && !video.ended && video.readyState > video.HAVE_CURRENT_DATA
+    }
     document.addEventListener('play', function (ev) {
-      if (((ev || 0).target || 0).nodeName === 'VIDEO' && ev.target.matches('#movie_player video[src]')) {
-        if (lyricsDisplayState === 'hidden') {
-          window.setTimeout(main, 600)
-        }
+      const statusCheck = () => isTriggered && lyricsDisplayState === 'hidden' && ((genius || 0).option || 0).autoShow
+      if (!statusCheck()) return
+      let video = ((ev || 0).target || 0)
+      if (video.nodeName === 'VIDEO' && video.matches('#movie_player video[src]')) {
+        window.setTimeout(() => {
+          statusCheck() && isVideoPlaying(video) && actionAddLyricsOrButton()
+          video = null
+        }, 600)
       }
     }, true)
 
@@ -2479,3 +2490,4 @@ if (document.location.hostname.startsWith('music')) {
     document.documentElement.classList.add('youtube-genius-lyrics')
   }
 }
+entryPoint()

@@ -24,6 +24,10 @@
 // @connect         genius.com
 // @match           https://www.youtube.com/*
 // @match           https://music.youtube.com/*
+// @exclude         https://www.youtube.com/embed/*
+// @exclude         https://www.youtube-nocookie.com/embed/*
+// @exclude         https://www.youtube.com/live_chat*
+// @exclude         https://www.youtube.com/live_chat_replay*
 // ==/UserScript==
 
 /*

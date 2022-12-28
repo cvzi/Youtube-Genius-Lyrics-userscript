@@ -1642,7 +1642,7 @@ function onSearchLyricsHideBtnClick (ev) {
   genius.f.hideLyricsWithMessage()
 }
 
-function placeholderValue (){
+function placeholderValue () {
   return safeString(window.lastUserInputConfirmed) || safeString(window.lastFetchedQuery) || safeString(window.defaultSongTitle) || ''
 }
 

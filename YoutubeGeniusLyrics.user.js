@@ -2159,7 +2159,7 @@ function delayedMain () {
 
 function newAppHint (status) {
   // TODO should this be removed in favor of a README hint in the next version?
-  
+
   if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
     // Other script already running
     return GM.setValue('newapphint', -1)
@@ -2263,7 +2263,7 @@ function newAppHint (status) {
   }
 }
 
-function entryPoint(){
+function entryPoint () {
   genius = null
   let isInIframe = null
   try {
@@ -2375,8 +2375,8 @@ function entryPoint(){
       }
     })
 
-    function isVideoPlaying(video) {
-      return video.currentTime > 0 && !video.paused && !video.ended && video.readyState > video.HAVE_CURRENT_DATA;
+    function isVideoPlaying (video) {
+      return video.currentTime > 0 && !video.paused && !video.ended && video.readyState > video.HAVE_CURRENT_DATA
     }
     document.addEventListener('play', function (ev) {
       const statusCheck = () => isTriggered && lyricsDisplayState === 'hidden' && ((genius || 0).option || 0).autoShow
@@ -2385,6 +2385,7 @@ function entryPoint(){
       if (video.nodeName === 'VIDEO' && video.matches('#movie_player video[src]')) {
         window.setTimeout(() => {
           statusCheck() && isVideoPlaying(video) && actionAddLyricsOrButton()
+          video = null
         }, 600)
       }
     }, true)

@@ -1639,8 +1639,17 @@ function onSearchLyricsSearchBtnClick (ev) {
   performSearch()
 }
 
-function onSearchLyricsHideBtnClick (ev) {
+function hideLyricsWithMessageAndStopAutoShow () {
+  if (genius.option.autoShow) {
+    let lyricsiframe = document.querySelector('iframe#lyricsiframe')
+    // document.querySelector('iframe#lyricsiframe').offsetHeight > 0 to check whether it is visible or not
+    if (lyricsiframe && lyricsiframe.offsetHeight > 0) genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
+  }
   genius.f.hideLyricsWithMessage()
+}
+
+function onSearchLyricsHideBtnClick (ev) {
+  hideLyricsWithMessageAndStopAutoShow()
 }
 
 function placeholderValue () {
@@ -1713,8 +1722,7 @@ function createConfigBtn (cName) {
 }
 
 function onLyricsFoundHideBtnClick (ev) {
-  genius.option.autoShow = false // Temporarily disable showing lyrics automatically on song change
-  genius.f.hideLyricsWithMessage()
+  hideLyricsWithMessageAndStopAutoShow()
 }
 
 function onLyricsFoundBackToSearchClick (ev) {
@@ -1828,7 +1836,7 @@ function onLyricsResultsBackBtnClick (ev) {
 }
 
 function onLyricsResultsHideBtnClick (ev) {
-  genius.f.hideLyricsWithMessage()
+  hideLyricsWithMessageAndStopAutoShow()
 }
 
 function onLyricsResultsTrackListClick (ev) {
@@ -2347,7 +2355,7 @@ function entryPoint () {
       const detail = ((ev || 0).detail || 0)
       const action = detail.action || ''
       if (action === 'hideLyrics') {
-        genius.f.hideLyricsWithMessage()
+        hideLyricsWithMessageAndStopAutoShow()
       } else if (action === 'showLyrics') {
         showLyricsButtonClicked()
       } else if (action === 'reloadCurrentLyrics') {

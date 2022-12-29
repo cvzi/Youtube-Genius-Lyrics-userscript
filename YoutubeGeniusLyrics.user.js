@@ -15,7 +15,7 @@
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @version         10.9.21
-// @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
+// @require         https://raw.githubusercontent.com/cvzi/genius-lyrics-userscript/af9b81cf478eca7a31a2cd3609f223df4cb12dbc/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
 // @grant           GM.getValue
@@ -1495,19 +1495,72 @@ async function updateAutoScroll (video, force) {
   if (isUpdateAutoScrollBusy) return
   if (isTriggered !== true) return // not ready
   if (!genius.current.compoundTitle) return // not ready
+  if (!genius.autoscroll.scrollingElementInfo) return
+  /*
+
+  cH = scrollingElementInfo.iframeHeight
+  scrollingElementInfo.scrollHeight
+  scrollingElementInfo.maxScrollTop
+  dH = scrollingElementInfo.divScrollHeight
+
+
+  currentStaticOffsetTop
+
+  video.currentTime
+  video.duration
+
+  generic f:  pos=0 means newScrollTop = currentStaticOffsetTop + 0 + offsetTop
+  generic f:  0<pos<1 means newScrollTop = MIN(currentStaticOffsetTop + (dH-cH)*pos + offsetTop, maxScrollTop)
+  generic f:  pos=1 means newScrollTop = MIN(currentStaticOffsetTop + (dH-cH) + offsetTop, maxScrollTop)
+
+  pos is given by this function
+
+
+  Conside mScrollTop = maxScrollTop = dH-cH & offsetTop = 0
+  currentStaticOffsetTop=0,   scrollingTop = 0 ... mScrollTop  ;  x(0) = 0; x(1) = mScrollTop
+  currentStaticOffsetTop=k,   scrollingTop = k ... mScrollTop ;  x(0) = k; x(1) = mScrollTop
+
+
+  Conside mScrollTop = maxScrollTop = offsetTop+dH-cH & offsetTop >0
+  currentStaticOffsetTop=0,   scrollingTop = offsetTop ... mScrollTop  ;  x(0) = offsetTop; x(1) = mScrollTop
+  currentStaticOffsetTop=k,   scrollingTop = offsetTop+k ... mScrollTop ;  x(0) = offsetTop+k; x(1) = mScrollTop
+
+
+  Conside mScrollTop = maxScrollTop > offsetTop+dH-cH & offsetTop >0
+  currentStaticOffsetTop=0,   scrollingTop = offsetTop ... offsetTop+dH-cH  ;  x(0) = offsetTop; x(1) = offsetTop+dH-cH
+  currentStaticOffsetTop=k,   scrollingTop = offsetTop+k ... offsetTop+dH-cH ;  x(0) = offsetTop+k; x(1) = offsetTop+dH-cH
+
+  x(0) = offsetTop+currentStaticOffsetTop
+  x(1) = MIN(offsetTop+dH-cH, maxScrollTop)
+
+  // let newScrollTop = staticTop + (divScrollHeight - iframeHeight) * position + offsetTop
+
+
+  x(t) = c_currentStaticOffsetTop +  (c_dH - c_cH) * pos(t) + c_offsetTop
+
+  pos(0) = (offsetTop+currentStaticOffsetTop - c_currentStaticOffsetTop - c_offsetTop)/(c_dH - c_cH)
+  pos(1) = (MIN(offsetTop+dH-cH, maxScrollTop) - c_currentStaticOffsetTop - c_offsetTop)/(c_dH - c_cH)
+
+
+
+  */
   if (!video) {
     video = getYoutubeMainVideo()
     if (!video) return
   }
+
+
   isUpdateAutoScrollBusy = true
   const { currentTime, duration } = video
-  let pos = currentTime / duration
+  let pos =currentTime / duration
   if (pos >= 0) {
     // do nothing
   } else {
     isUpdateAutoScrollBusy = false
     return // invalid currentTime or duration
   }
+
+
   if (`${lastPos}` !== `${pos}`) {
     lastPos = pos
     let ct = currentTime
@@ -1523,7 +1576,7 @@ async function updateAutoScroll (video, force) {
         return // invalid timechange
       }
     }
-    if (duration > 15) { // skip for music <= 15s
+    if ( false && duration > 15) { // skip for music <= 15s
       let k = 1.95 // the scrollbar will just disappear at the end of music
       if (duration > 80) {
         k = 3.21 // the singer shall stop a bit eariler than the media ends
@@ -1552,7 +1605,7 @@ async function updateAutoScroll (video, force) {
       }
       pos = ct / duration * cbFactor
     }
-    genius.f.scrollLyrics(pos)
+    genius.f.scrollLyrics({progressValue:pos})
   }
   await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
   isUpdateAutoScrollBusy = false
@@ -2410,6 +2463,9 @@ function entryPoint () {
         } else {
           document.removeEventListener('timeupdate', videoTimeUpdate, true)
         }
+      } else if (data.iAm === SCRIPT_NAME && data.type === 'autoscrollSetup') {
+          genius.autoscroll.currentStaticOffsetTop = data.currentStaticOffsetTop
+          genius.autoscroll.scrollingElementInfo = data.scrollingElementInfo
       }
     })
 
@@ -2534,6 +2590,8 @@ function entryPoint () {
     genius.option.enableStyleSubstitution = true
     genius.option.cacheHTMLRequest = true // 1 lyrics page consume 2XX KB [OR 25 ~ 50KB under ]
 
+    genius.autoscroll.debug = true
+    genius.autoscroll.enableDerate = true
     document.documentElement.classList.add('youtube-genius-lyrics')
   }
 }

@@ -2194,7 +2194,7 @@ function delayedMain () {
 function newAppHint (status) {
   // TODO should this be removed in favor of a README hint in the next version?
 
-  if (document.getElementById('lyricscontainer') || document.getElementById('showlyricsbutton')) {
+  if (document.getElementById('youtube-music-genius-lyrics-style')) {
     // Other script already running
     return GM.setValue('newapphint', -1)
   }

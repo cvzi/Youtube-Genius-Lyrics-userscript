@@ -782,7 +782,9 @@ function resize () {
 
   const { top, width } = calcContainerWidthTop()
 
-  container.style.top = `${top}px`
+  // container.style.top = `${top}px`
+  container.style.setProperty('--ygl-container-top', `${top}px`)
+  container.style.top = `var(--ytd-toolbar-height, var(--ytd-masthead-height, var(--ytd-watch-flexy-masthead-height, var(--ygl-container-top))))` // compatible with YouTube Live Borderless
   container.style.setProperty('--ygl-container-width', `${width}px`)
 
   // const iframe = document.getElementById('lyricsiframe')
@@ -810,7 +812,9 @@ function getCleanLyricsContainer () {
     container.style = ''
   }
 
-  container.style.top = `${top}px`
+  // container.style.top = `${top}px`
+  container.style.setProperty('--ygl-container-top', `${top}px`)
+  container.style.top = `var(--ytd-toolbar-height, var(--ytd-masthead-height, var(--ytd-watch-flexy-masthead-height, var(--ygl-container-top))))` // compatible with YouTube Live Borderless
   container.style.setProperty('--ygl-container-width', `${width}px`)
 
   document.body.appendChild(container)

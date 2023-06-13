@@ -22,7 +22,7 @@ Family of GeniusLyrics Userscripts:
 [![Contributors](https://contrib.rocks/image?repo=cvzi/Youtube-Genius-Lyrics-userscript)](https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/graphs/contributors)
 
 ### Screenshots:
-* 2022
+* Year 2022
 -   Default theme (Dynamic Color with YouTube Dark & Light Themes) 
     * *Note: YouTube is now moving forwards into the dark mode (Darker Dark Mode with Cinematic Annotations)*
     * *Using Light Theme is highly non-recommended*
@@ -31,7 +31,7 @@ Family of GeniusLyrics Userscripts:
 -   Integrated with [Tabview Youtube](https://greasyfork.org/en/scripts/428651-tabview-youtube) 
     * *Tabview Youtube*[(GitHub)](https://github.com/cyfung1031/Tabview-Youtube) is a userscript developed by [CY Fung](https://github.com/cyfung1031) to manage the page layout as tabs to maximize the watching experience.
     ![Screenshot as of 2022 with TabView Youtube](screenshot-2022-tabview-youtube.png)
-* 2019 - 2021
+* Year 2019 - 2021
 -   Default theme 
     ![Screenshot of youtube music video with lyrics](screenshot.png)
 -   Dark (Spotify) theme

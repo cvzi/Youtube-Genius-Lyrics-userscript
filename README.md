@@ -1,4 +1,7 @@
 # Youtube-Genius-Lyrics-userscript
+
+### Description:
+
 A userscript or greasemonkey script that shows lyrics from [genius.com](https://genius.com/) on [YouTube](https://www.youtube.com/) music videos
 
 This is a userscript for your browser. It's primarily designed for Firefox and Chrome with

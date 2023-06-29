@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.27
+// @version         10.9.28
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -50,9 +50,11 @@
 
 let genius
 const SCRIPT_NAME = 'Youtube Genius Lyrics'
+const { Promise } = this || window // YouTube polyfill to Promise in older browsers will make the feature being unstable.
 
 let lyricsDisplayState = 'hidden'
 let disableShowLyricsButton = false // hide if the page is confirmed as non-video page
+let isYouTubeLive = false
 
 function addCss () {
   let style = document.querySelector('style#youtube_genius_lyrics_style')
@@ -234,6 +236,10 @@ function addCss () {
         */
       top: var(--ytd-toolbar-height, var(--ytd-masthead-height, var(--ytd-watch-flexy-masthead-height, 56px)));
 
+    }
+
+    #showlyricsbutton.hide-during-ytlive {
+      display: none;
     }
 
     #showlyricsbutton:hover {
@@ -857,6 +863,7 @@ function addLyricsButton () {
   // const top = getMastheadHeight()
   const showlyricsbutton = document.createElement('div')
   showlyricsbutton.id = 'showlyricsbutton'
+  if (isYouTubeLive) showlyricsbutton.classList.add('hide-during-ytlive')
   showlyricsbutton.setAttribute('title', 'Load lyrics from genius.com')
   showlyricsbutton.addEventListener('click', showLyricsButtonClicked, false)
   document.body.appendChild(showlyricsbutton)
@@ -2171,6 +2178,13 @@ async function executeMainWhenVisible (t, mPageLoadId) {
   isTriggered = true
   actionAddLyricsOrButton()
 }
+function isYouTubeLiveFn () {
+  const ytpLive = document.querySelector('.ytp-live')
+  isYouTubeLive = ytpLive !== null && ytpLive.matches('[hidden] div.ytp-live') === false // just use simple DOM checking
+  const lyricsBtn = document.querySelector('#showlyricsbutton')
+  if (lyricsBtn !== null) lyricsBtn.classList.toggle('hide-during-ytlive', isYouTubeLive)
+  return isYouTubeLive
+}
 let pageLoadId = 0
 function delayedMain () {
   pageLoadId++
@@ -2185,6 +2199,7 @@ function delayedMain () {
   window.lastUserInput = null
   window.lastUserInputConfirmed = null
   window.defaultSongTitle = null
+  isYouTubeLiveFn()
   const mPageLoadId = pageLoadId
   window.requestAnimationFrame(() => {
     if (mPageLoadId !== pageLoadId) return
@@ -2326,6 +2341,7 @@ function entryPoint () {
         })
         document.removeEventListener('yt-navigate-finish', delayedMain, false)
         document.addEventListener('yt-navigate-finish', delayedMain, false)
+        isYouTubeLiveFn()
       }
     if (isInIframe && !isRobotsTxt) return
 

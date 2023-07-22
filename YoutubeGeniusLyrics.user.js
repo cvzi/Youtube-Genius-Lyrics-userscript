@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.32
+// @version         10.9.33
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -687,6 +687,80 @@ function addCss () {
   }
 }
 
+const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval } = (() => { // eslint-disable-line no-unused-vars
+  let win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window // eslint-disable-line no-undef
+  let removeIframeFn = null
+  try {
+    const frameId = 'vanillajs-iframe-v1'
+    let frame = document.getElementById(frameId)
+    if (!frame) {
+      frame = document.createElement('iframe')
+      frame.id = 'vanillajs-iframe-v1'
+      frame.sandbox = 'allow-same-origin' // script cannot be run inside iframe but API can be obtained from iframe
+      let n = document.createElement('noscript') // wrap into NOSCRPIT to avoid reflow (layouting)
+      n.appendChild(frame)
+      const root = document.documentElement
+      if (root) {
+        root.appendChild(n)
+        removeIframeFn = (setTimeout) => {
+          const removeIframeOnDocumentReady = (e) => {
+            e && win.removeEventListener('DOMContentLoaded', removeIframeOnDocumentReady, false)
+            win = null
+            setTimeout(() => {
+              n.remove()
+              n = null
+            }, 200)
+          }
+          if (document.readyState !== 'loading') {
+            removeIframeOnDocumentReady()
+          } else {
+            win.addEventListener('DOMContentLoaded', removeIframeOnDocumentReady, false)
+          }
+        }
+      }
+    }
+
+    const fc = frame ? frame.contentWindow : null
+    if (fc) {
+      const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval } = fc
+      const res = { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval }
+      for (const k in res) res[k] = res[k].bind(win) // necessary
+      if (removeIframeFn) Promise.resolve(res.setTimeout).then(removeIframeFn)
+      return res
+    }
+  } catch (e) {
+    console.warn(e)
+  }
+
+  // since the mechanism does not utilize async/await, use the old method as fallback.
+  function isFakeWindow () {
+    // window is not window in Spotify Web App
+    return (window instanceof window.constructor) === false
+  }
+  /**
+   * getTrueWindow
+   * @returns {Window}
+   */
+  function getTrueWindow () {
+    // this can bypass Spotify's window Proxy Object and obtain the original window object
+    try {
+      return new Function('return window')() // eslint-disable-line no-new-func
+    } catch (e) {
+      console.warn('the actual window object cannot be obtained.', e) // e.g. YouTube Music
+      return window // fallback
+    }
+  }
+
+  let trueWindow = isFakeWindow() ? getTrueWindow() : win
+  const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval } = trueWindow
+  const res = { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval }
+  for (const k in res) res[k] = res[k].bind(trueWindow) // necessary
+  trueWindow = null
+
+  if (removeIframeFn) Promise.resolve(res.setTimeout).then(removeIframeFn)
+  return res
+})()
+
 function appendElements (target, elements) {
   if (typeof target.append === 'function') {
     target.append(...elements)
@@ -774,7 +848,7 @@ let lastResizeDT = 0
 function onResize () {
   const tdt = Date.now()
   lastResizeDT = tdt
-  window.setTimeout(function () {
+  setTimeout(function () {
     if (tdt === lastResizeDT) {
       resize()
     }
@@ -1525,7 +1599,7 @@ async function updateAutoScroll (video, force) {
     lastPos = pos
     let ct = currentTime
     if (force !== true) {
-      await new Promise(resolve => window.setTimeout(resolve, 30))
+      await new Promise(resolve => setTimeout(resolve, 30))
       const ct1 = video.currentTime
       if (`${video.duration}` === `${duration}` && ((ct1 - ct < 50 / 1000 && ct1 > ct) || `${ct1}` === `${ct}`)) {
         // if the video is playing or stopped, without change of media
@@ -1567,7 +1641,7 @@ async function updateAutoScroll (video, force) {
     }
     genius.f.scrollLyrics(pos)
   }
-  await new Promise(window.requestAnimationFrame) /* eslint-disable-line no-new */
+  await new Promise(requestAnimationFrame) /* eslint-disable-line no-new */
   isUpdateAutoScrollBusy = false
 }
 
@@ -2203,7 +2277,7 @@ function delayedMain () {
   window.defaultSongTitle = null
   isYouTubeLiveFn()
   const mPageLoadId = pageLoadId
-  window.requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
     if (mPageLoadId !== pageLoadId) return
     // only execute in foreground tab
     genius.f.hideLyricsWithMessage()
@@ -2309,7 +2383,7 @@ function newAppHint (status) {
       GM.setValue('newapphint', -1).then(() => container.remove())
     })
 
-    window.setTimeout(function () {
+    setTimeout(function () {
       container.style.left = `calc(50% - ${container.clientWidth / 2}px)`
       container.style.top = `calc(50% - ${container.clientHeight / 2}px)`
     }, 100)
@@ -2328,7 +2402,7 @@ function entryPoint () {
   if (document.location.hostname.startsWith('music')) {
     if (isRobotsTxt || isInIframe) return
     GM.getValue('newapphint', 0).then(function (status) {
-      window.setTimeout(() => newAppHint(status), 5000)
+      setTimeout(() => newAppHint(status), 5000)
     })
   } else {
     const setupMain = isRobotsTxt
@@ -2337,7 +2411,7 @@ function entryPoint () {
       }
       : function setupMain () {
         const mPageLoadId = pageLoadId
-        window.requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           if (mPageLoadId !== pageLoadId) return
           executeMainWhenVisible(600, mPageLoadId)
         })
@@ -2444,12 +2518,12 @@ function entryPoint () {
       let video = ((ev || 0).target || 0)
       if (video.nodeName === 'VIDEO' && video.matches('#movie_player video[src]')) {
         const mPageLoadId = pageLoadId
-        window.requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           if (mPageLoadId !== pageLoadId) {
             video = null
             return
           }
-          window.setTimeout(() => {
+          setTimeout(() => {
             if (mPageLoadId === pageLoadId) {
               statusCheck() && isVideoPlaying(video) && actionAddLyricsOrButton()
             }
@@ -2461,7 +2535,7 @@ function entryPoint () {
 
     function autoscrollenabledChanged () {
       // when value is configurated in any tab, this function will be triggered in all tabs by Userscript Manager
-      window.requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         // not execute for all foreground and background tabs, only execute when the tab is visibile / when the tab shows
         genius.f.updateAutoScrollEnabled().then(() => {
           let isScrollLyricsEnabled = false

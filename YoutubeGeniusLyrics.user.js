@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.31
+// @version         10.9.32
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -51,7 +51,7 @@
 let genius
 const SCRIPT_NAME = 'Youtube Genius Lyrics'
 /** @type {globalThis.PromiseConstructor} */
-const Promise = (async () => { })().constructor; // YouTube polyfill to Promise in older browsers will make the feature being unstable.
+const Promise = (async () => { })().constructor // YouTube polyfill to Promise in older browsers will make the feature being unstable.
 
 let lyricsDisplayState = 'hidden'
 let disableShowLyricsButton = false // hide if the page is confirmed as non-video page

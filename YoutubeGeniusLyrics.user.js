@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.34
+// @version         10.9.35
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -28,6 +28,7 @@
 // @exclude         https://www.youtube-nocookie.com/embed/*
 // @exclude         https://www.youtube.com/live_chat*
 // @exclude         https://www.youtube.com/live_chat_replay*
+// @exclude         /^https?://\S+\.(png|jpg|jpeg|gif|xml|svg|manifest|log|ini)[^\/]*$/
 // ==/UserScript==
 
 /*

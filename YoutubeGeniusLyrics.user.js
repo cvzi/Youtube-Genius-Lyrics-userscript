@@ -2346,7 +2346,7 @@ function newAppHint (status) {
     const h2 = container.appendChild(document.createElement('h2'))
     h2.textContent = '⚠️ Youtube Genius Lyrics 🆕'
     const p = container.appendChild(document.createElement('p'))
-    p.textContent = '▶️ The "Youtube Genius Lyrics" UserScript is only applied on youtube.com. To view Genius lyrics on m.youtube.com, please install the separate UserScript, "Youtube Music Genius Lyrics".'
+    p.textContent = '▶️ The "Youtube Genius Lyrics" UserScript is only applied on youtube.com. To view Genius lyrics on music.youtube.com, please install the separate UserScript, "Youtube Music Genius Lyrics".'
     p.appendChild(document.createElement('br'))
     p.appendChild(document.createElement('br'))
 

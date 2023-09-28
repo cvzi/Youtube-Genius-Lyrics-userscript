@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.38
+// @version         10.9.39
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -2352,14 +2352,14 @@ function newAppHint (status) {
 
     const aSource = p.appendChild(document.createElement('a'))
     aSource.target = '_blank'
-    aSource.href = 'https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'
-    aSource.textContent = '📑 https://openuserjs.org/scripts/cuzi/Youtube_Music_Genius_Lyrics'
+    aSource.href = 'https://greasyfork.org/en/scripts/406892-youtube-music-genius-lyrics'
+    aSource.textContent = '📑 https://greasyfork.org/en/scripts/406892-youtube-music-genius-lyrics'
 
     p.appendChild(document.createElement('br'))
     p.appendChild(document.createElement('br'))
 
     const aInstall = p.appendChild(document.createElement('a'))
-    aInstall.href = 'https://openuserjs.org/install/cuzi/Youtube_Music_Genius_Lyrics.user.js'
+    aInstall.href = 'https://greasyfork.org/scripts/406892-youtube-music-genius-lyrics/code/Youtube%20Music%20Genius%20Lyrics.user.js'
     aInstall.textContent = '💘 Click to install new script'
     aInstall.addEventListener('click', function () {
       GM.setValue('newapphint', -1).then(function () {

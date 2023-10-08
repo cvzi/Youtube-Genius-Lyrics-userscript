@@ -64,8 +64,16 @@ function addCss () {
     style = document.createElement('style')
     style.id = 'youtube_genius_lyrics_style'
     style.innerHTML = `
-    #myconfigwin39457845 {
-      z-index: 2060 !important;
+    body #mycaptchahint897454 {
+      z-index: 2070;
+    }
+
+    body #myoverlay7658438 {
+      z-index: 2050;
+    }
+
+    body #myconfigwin39457845 {
+      z-index: 2060;
     }
 
     html {

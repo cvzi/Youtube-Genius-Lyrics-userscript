@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.40
+// @version         10.9.41
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -999,6 +999,10 @@ function titleFix (text) {
   return text.replace(/\(([A-Za-z][a-z]+) ([Vv]ersion|[Vv]er\.?)\)/g, '($1)') // Genius Lyrics title use Ver. instead of Version; e.g. English Version
 }
 
+function removeEmojis (str) {
+  return str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2300}-\u{23FF}\u{2B50}\u{1F004}\u{1F0CF}\u{E0020}-\u{E007F}\u{FE0F}]/gu, '')
+}
+
 function getMusicTitleAndAuthor (pData) {
   const response = pData.response
   const engagementPanels = response.engagementPanels
@@ -1027,8 +1031,10 @@ function getMusicTitleAndAuthor (pData) {
         title = pData.playerResponse.videoDetails.title
       } catch (e) { }
       if (title && typeof title === 'string') {
+        a1 = removeEmojis(a1).trim().replace(/\s+/g, ' ')
         a1 = titleFix(simpleTextFixup(a1))
         a2 = simpleTextFixup(a2)
+        title = removeEmojis(title).trim().replace(/\s+/g, ' ')
         title = simpleTextFixup(title)
         const newValue = `${a2} ${a1}`
         return {
@@ -1178,6 +1184,7 @@ async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   let songTitle = videoTitle
 
   // song title text processing
+  songTitle = removeEmojis(songTitle)
   songTitle = songTitle
     .replace(/[\u180E\u200B-\u200D\u2060\uFEFF]+/g, '') // zero-spacing
     .replace(/[\s\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000\u00B7\u237D\u2420\u2422\u2423]+/g, ' ') /* spacing */ // eslint-disable-line no-control-regex

@@ -2591,9 +2591,12 @@ function entryPoint () {
           let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
           const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
 
-          const expander = document.querySelector('ytd-expander.style-scope.ytd-video-secondary-info-renderer')
+          const expander = document.querySelector('ytd-expander')
+          const menuItem = document.querySelector('ytd-guide-entry-renderer yt-formatted-string')
           if (expander) {
             fontSize = window.getComputedStyle(expander).fontSize
+          } else if (menuItem) {
+            fontSize = window.getComputedStyle(menuItem).fontSize
           } else {
             fontSize = cStyle.fontSize
           }

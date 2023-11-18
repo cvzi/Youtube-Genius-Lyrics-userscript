@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.45
+// @version         10.9.46
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1459,10 +1459,9 @@ async function addLyrics (force, beLessSpecific) {
       default:
       // do nothing
     }
-
-    const tmpVideoId = `${pRes.videoId}${genius.option.themeKey}`
+    const tmpVideoId = `${pRes.videoId}${genius.option.themeKey}${genius.option.fontSize}`
     if (lastVideoId === tmpVideoId && document.getElementById('lyricscontainer')) {
-      // Same video id and same theme and lyrics are showing -> stop here
+      // Same video id and same theme settings and lyrics are showing -> stop here
       return
     }
     lastVideoId = tmpVideoId
@@ -1731,7 +1730,7 @@ function onSearchLyricsKeyUp (ev) {
   if (ev.code === 'Escape') {
     ev.preventDefault()
     input.value = ''
-  } else if (ev.code === 'Enter') {
+  } else if (ev.code === 'Enter' || ev.code === 'NumpadEnter') {
     ev.preventDefault()
     performSearch()
     return
@@ -2587,19 +2586,24 @@ function entryPoint () {
           let color = cStyle.getPropertyValue('--yt-spec-text-primary')
           // let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
           // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
-          let fontSize = null
           let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
           const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
 
-          const expander = document.querySelector('ytd-expander')
-          const menuItem = document.querySelector('ytd-guide-entry-renderer yt-formatted-string')
-          if (expander) {
-            fontSize = window.getComputedStyle(expander).fontSize
-          } else if (menuItem) {
-            fontSize = window.getComputedStyle(menuItem).fontSize
+          let fontSize = genius.option.fontSize
+          if (genius.option.fontSize) {
+            fontSize = `${genius.option.fontSize}px`
           } else {
-            fontSize = cStyle.fontSize
+            const expander = document.querySelector('ytd-expander')
+            const menuItem = document.querySelector('ytd-guide-entry-renderer yt-formatted-string')
+            if (expander) {
+              fontSize = window.getComputedStyle(expander).fontSize
+            } else if (menuItem) {
+              fontSize = window.getComputedStyle(menuItem).fontSize
+            } else {
+              fontSize = cStyle.fontSize
+            }
           }
+
           if (typeof background === 'string' && typeof color === 'string' && background.length > 3 && color.length > 3) {
             // do nothing
           } else {

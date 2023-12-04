@@ -13,10 +13,5 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest # or "latest", "canary", <sha>
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ hashFiles('**/bun.lockb') }}
       - name: Run linting and formatting
         run: bunx standard --verbose | bunx snazzy

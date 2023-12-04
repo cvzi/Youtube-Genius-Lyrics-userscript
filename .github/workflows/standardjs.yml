@@ -7,4 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: npx standard --verbose | npx snazzy
+    - uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: 1.0.15 # or "latest", "canary", <sha>
+    - run: bunx standard --verbose | bunx snazzy

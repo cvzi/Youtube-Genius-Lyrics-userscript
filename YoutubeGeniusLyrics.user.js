@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.47
+// @version         10.9.48
 // @require         https://greasyfork.org/scripts/406698-geniuslyrics/code/GeniusLyrics.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -1897,7 +1897,7 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) { // eslint-disable-
   }
 
   const iframe = document.createElement('iframe')
-  if (typeof webkitCancelAnimationFrame === 'function' && ((window || 0).navigator || 0).brave) {
+  if (typeof webkitCancelAnimationFrame === 'function') {
     iframe.src = (iframeBlankURL || (iframeBlankURL = URL.createObjectURL(new Blob([], { type: 'text/html' })))) // Brave
   }
   iframe.id = 'lyricsiframe'

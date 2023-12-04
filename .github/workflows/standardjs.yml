@@ -4,10 +4,20 @@ on: [push, pull_request]
 
 jobs:
   build:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: oven-sh/setup-bun@v1
-      with:
-        bun-version: 1.0.15 # or "latest", "canary", <sha>
-    - run: bunx standard --verbose | bunx snazzy
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          cache-hit: true
+          bun-version: latest # or "latest", "canary", <sha>
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ hashFiles('**/bun.lockb') }}
+      - name: Run linting and formatting
+        run: bunx standard --verbose | bunx snazzy

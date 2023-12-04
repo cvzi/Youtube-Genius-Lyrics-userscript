@@ -57,6 +57,7 @@ const Promise = (async () => { })().constructor // YouTube polyfill to Promise i
 let lyricsDisplayState = 'hidden'
 let disableShowLyricsButton = false // hide if the page is confirmed as non-video page
 let isYouTubeLive = false
+let iframeBlankURL = null
 
 function addCss () {
   let style = document.querySelector('style#youtube_genius_lyrics_style')
@@ -704,23 +705,23 @@ const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInter
     let frame = document.getElementById(frameId)
     if (!frame) {
       frame = document.createElement('iframe')
-      frame.id = 'vanillajs-iframe-v1'
+      frame.id = frameId
+      const blobURL = typeof webkitCancelAnimationFrame === 'function' ? (frame.src = URL.createObjectURL(new Blob([], { type: 'text/html' }))) : null // avoid Brave Crash
       frame.sandbox = 'allow-same-origin' // script cannot be run inside iframe but API can be obtained from iframe
       let n = document.createElement('noscript') // wrap into NOSCRPIT to avoid reflow (layouting)
       n.appendChild(frame)
       const root = document.documentElement
       if (root) {
         root.appendChild(n)
+        if (blobURL) Promise.resolve().then(() => URL.revokeObjectURL(blobURL))
         removeIframeFn = (setTimeout) => {
           const removeIframeOnDocumentReady = (e) => {
             e && win.removeEventListener('DOMContentLoaded', removeIframeOnDocumentReady, false)
-            win = null
-            setTimeout(() => {
-              n.remove()
-              n = null
-            }, 200)
+            e = n
+            n = win = removeIframeFn = 0
+            setTimeout ? setTimeout(() => e.remove(), 200) : e.remove()
           }
-          if (document.readyState !== 'loading') {
+          if (!setTimeout || document.readyState !== 'loading') {
             removeIframeOnDocumentReady()
           } else {
             win.addEventListener('DOMContentLoaded', removeIframeOnDocumentReady, false)
@@ -731,11 +732,15 @@ const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInter
 
     const fc = frame ? frame.contentWindow : null
     if (fc) {
-      const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval } = fc
-      const res = { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval }
-      for (const k in res) res[k] = res[k].bind(win) // necessary
-      if (removeIframeFn) Promise.resolve(res.setTimeout).then(removeIframeFn)
-      return res
+      try {
+        const { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval } = fc
+        const res = { requestAnimationFrame, setTimeout, setInterval, clearTimeout, clearInterval }
+        for (const k in res) res[k] = res[k].bind(win) // necessary
+        if (removeIframeFn) Promise.resolve(res.setTimeout).then(removeIframeFn)
+        return res
+      } catch (e) {
+        if (removeIframeFn) removeIframeFn()
+      }
     }
   } catch (e) {
     console.warn(e)
@@ -1892,6 +1897,9 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) { // eslint-disable-
   }
 
   const iframe = document.createElement('iframe')
+  if (typeof webkitCancelAnimationFrame === 'function' && ((window || 0).navigator || 0).brave) {
+    iframe.src = (iframeBlankURL || (iframeBlankURL = URL.createObjectURL(new Blob([], { type: 'text/html' })))) // Brave
+  }
   iframe.id = 'lyricsiframe'
   iframe.style.opacity = 0.1
 

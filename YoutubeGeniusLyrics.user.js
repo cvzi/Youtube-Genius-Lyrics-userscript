@@ -58,6 +58,7 @@ let lyricsDisplayState = 'hidden'
 let disableShowLyricsButton = false // hide if the page is confirmed as non-video page
 let isYouTubeLive = false
 let iframeBlankURL = null
+console.log(123);
 
 function addCss () {
   let style = document.querySelector('style#youtube_genius_lyrics_style')

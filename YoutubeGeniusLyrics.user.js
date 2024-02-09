@@ -46,6 +46,7 @@
 */
 
 /* global GM, genius, geniusLyrics, top, GM_addValueChangeListener */ // eslint-disable-line no-unused-vars, no-redeclare
+/* jshint asi: true, esversion: 8 */
 
 'use strict'
 

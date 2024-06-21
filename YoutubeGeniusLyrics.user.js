@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.9.56
+// @version         10.9.57
 // @require         https://update.greasyfork.org/scripts/406698/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
@@ -2258,6 +2258,11 @@ async function readPageSongInfo () {
 async function actionAddLyricsOrButton () {
   if (lyricsDisplayState === 'loading') {
     // avoid iframe communcation error
+    return
+  }
+  if (isYouTubeLive) {
+    setDisableShowLyricsButton(true)
+    genius.f.hideLyricsWithMessage()
     return
   }
   let mPageSongInfoRes = await mPageSongInfoPromise

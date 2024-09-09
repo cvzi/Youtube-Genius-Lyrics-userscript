@@ -15,7 +15,7 @@
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @version         10.9.58
-// @require         https://raw.githubusercontent.com/cvzi/genius-lyrics-userscript/a51406db604ee48d5df606a95edbef3b81d993c1/GeniusLyrics.js
+// @require         https://raw.githubusercontent.com/cvzi/genius-lyrics-userscript/98c9efeeab774f34d7682a7992da618bdcc14544/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -63,47 +63,47 @@ let iframeBlankURL = null
 
 const elmBuild = (tag, ...contents) => {
   /** @type {HTMLElement} */
-  const elm = typeof tag === 'string' ? document.createElement(tag) : tag;
+  const elm = typeof tag === 'string' ? document.createElement(tag) : tag
   for (const content of contents) {
-    if (!content || typeof content !== 'object' || (content instanceof Node)) {
+    if (!content || typeof content !== 'object' || (content instanceof Node)) { // eslint-disable-line no-undef
       elm.append(content)
     } else if (content.length > 0) {
       elm.appendChild(elmBuild(...content))
     } else if (content.style) {
-      Object.assign(elm.style, content.style);
+      Object.assign(elm.style, content.style)
     } else if (content.classList) {
       elm.classList.add(...content.classList)
     } else if (content.attr) {
-      for (const [attr, val] of Object.entries(content.attr)) elm.setAttribute(attr, val);
+      for (const [attr, val] of Object.entries(content.attr)) elm.setAttribute(attr, val)
     } else {
       Object.assign(elm, content)
     }
   }
-  return elm;
+  return elm
 }
 
 const elmBuildNS = (tag, ...contents) => {
   const ns = 'http://www.w3.org/2000/svg'
   /** @type {Element} */
-  const elm = typeof tag === 'string' ? document.createElementNS(ns, tag) : tag;
+  const elm = typeof tag === 'string' ? document.createElementNS(ns, tag) : tag
   for (const content of contents) {
-    if (!content || typeof content !== 'object' || (content instanceof Node)) {
+    if (!content || typeof content !== 'object' || (content instanceof Node)) { // eslint-disable-line no-undef
       elm.append(content)
     } else if (content.length > 0) {
       elm.appendChild(elmBuildNS(...content))
     } else if (content.style) {
-      Object.assign(elm.style, content.style);
+      Object.assign(elm.style, content.style)
     } else if (content.classList) {
       elm.classList.add(...content.classList)
     } else if (content.attr) {
-      for (const [attr, val] of Object.entries(content.attr)) elm.setAttributeNS(null, attr, val);
+      for (const [attr, val] of Object.entries(content.attr)) elm.setAttributeNS(null, attr, val)
     } else if (content.attrNS) {
-      for (const [attr, val] of Object.entries(content.attrNS)) elm.setAttributeNS(ns, attr, val);
+      for (const [attr, val] of Object.entries(content.attrNS)) elm.setAttributeNS(ns, attr, val)
     } else {
       Object.assign(elm, content)
     }
   }
-  return elm;
+  return elm
 }
 
 function addCss () {
@@ -1823,27 +1823,26 @@ function showSearchField (query) {
   // input.placeholder = 'Search genius.com...'
 
   const searchBtn = document.createElement('span')
-  searchBtn.classList.add('youtube-genius-lyrics-search-search-btn');
+  searchBtn.classList.add('youtube-genius-lyrics-search-search-btn')
 
   searchBtn.appendChild(elmBuildNS('svg',
     {
-      'xmlns': 'http://www.w3.org/2000/svg',
+      xmlns: 'http://www.w3.org/2000/svg'
     },
     {
       attr: {
-        'width': 12,
-        'height': 12,
-        'preserveAspectRatio': 'xMidYMid meet',
-        'viewBox': '0 0 342 342',
+        width: '12',
+        height: '12',
+        preserveAspectRatio: 'xMidYMid meet',
+        viewBox: '0 0 342 342'
       }
     }, [
-    'path', {
-      attr: {
-        'd': 'M337 317 239 219C259 196 270 166 270 134 270 60 210 0 135 0S0 60 0 134 61 268 135 268C167 268 196 257 219 239L317 337C323 343 331 343 337 337S343 323 337 317ZM29 134C29 76 76 29 135 29S241 76 241 134 194 239 135 239 29 192 29 134Z'
+      'path', {
+        attr: {
+          d: 'M337 317 239 219C259 196 270 166 270 134 270 60 210 0 135 0S0 60 0 134 61 268 135 268C167 268 196 257 219 239L317 337C323 343 331 343 337 337S343 323 337 317ZM29 134C29 76 76 29 135 29S241 76 241 134 194 239 135 239 29 192 29 134Z'
+        }
       }
-    }
-  ]))
-
+    ]))
 
   // Hide button
   const hideButton = document.createElement('span')
@@ -1918,16 +1917,16 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) { // eslint-disable-
       ['h2',
         'This script only works in ',
         ['a', {
-          'target': '_blank',
-          'href': 'https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/'
-        }, 'Tampermonkey'],
+          target: '_blank',
+          href: 'https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/'
+        }, 'Tampermonkey']
       ],
       'Greasemonkey is no longer supported because of this ',
       ['a', {
-        'target': '_blank',
-        'href': 'https://github.com/greasemonkey/greasemonkey/issues/2574'
+        target: '_blank',
+        href: 'https://github.com/greasemonkey/greasemonkey/issues/2574'
       }, 'bug greasemonkey/issues/2574'],
-      ' in Greasemonkey.',
+      ' in Greasemonkey.'
     )
     return
   }
@@ -2106,7 +2105,7 @@ function listSongs (hits, container, query) {
         showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}`]] : '',
         !showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `${hit.result.lyrics_state}`]] : ''
       ],
-      ['div', { style: { 'clear': 'left' } }]
+      ['div', { style: { clear: 'left' } }]
     )
 
     if (!hitMaps) {
@@ -2136,7 +2135,7 @@ function listSongs (hits, container, query) {
   ])
 }
 
-function loremIpsum() {
+function loremIpsum () {
   const random = (x) => 1 + parseInt(Math.random() * x)
 
   // Create a container for the entire content

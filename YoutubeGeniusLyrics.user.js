@@ -15,7 +15,7 @@
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
 // @version         10.9.58
-// @require         https://update.greasyfork.org/scripts/406698/GeniusLyrics.js
+// @require         https://raw.githubusercontent.com/cvzi/genius-lyrics-userscript/a51406db604ee48d5df606a95edbef3b81d993c1/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
 // @grant           GM.setValue
@@ -61,12 +61,57 @@ let disableShowLyricsButton = false // hide if the page is confirmed as non-vide
 let isYouTubeLive = false
 let iframeBlankURL = null
 
+const elmBuild = (tag, ...contents) => {
+  /** @type {HTMLElement} */
+  const elm = typeof tag === 'string' ? document.createElement(tag) : tag;
+  for (const content of contents) {
+    if (!content || typeof content !== 'object' || (content instanceof Node)) {
+      elm.append(content)
+    } else if (content.length > 0) {
+      elm.appendChild(elmBuild(...content))
+    } else if (content.style) {
+      Object.assign(elm.style, content.style);
+    } else if (content.classList) {
+      elm.classList.add(...content.classList)
+    } else if (content.attr) {
+      for (const [attr, val] of Object.entries(content.attr)) elm.setAttribute(attr, val);
+    } else {
+      Object.assign(elm, content)
+    }
+  }
+  return elm;
+}
+
+const elmBuildNS = (tag, ...contents) => {
+  const ns = 'http://www.w3.org/2000/svg'
+  /** @type {Element} */
+  const elm = typeof tag === 'string' ? document.createElementNS(ns, tag) : tag;
+  for (const content of contents) {
+    if (!content || typeof content !== 'object' || (content instanceof Node)) {
+      elm.append(content)
+    } else if (content.length > 0) {
+      elm.appendChild(elmBuildNS(...content))
+    } else if (content.style) {
+      Object.assign(elm.style, content.style);
+    } else if (content.classList) {
+      elm.classList.add(...content.classList)
+    } else if (content.attr) {
+      for (const [attr, val] of Object.entries(content.attr)) elm.setAttributeNS(null, attr, val);
+    } else if (content.attrNS) {
+      for (const [attr, val] of Object.entries(content.attrNS)) elm.setAttributeNS(ns, attr, val);
+    } else {
+      Object.assign(elm, content)
+    }
+  }
+  return elm;
+}
+
 function addCss () {
   let style = document.querySelector('style#youtube_genius_lyrics_style')
   if (style === null) {
     style = document.createElement('style')
     style.id = 'youtube_genius_lyrics_style'
-    style.innerHTML = `
+    style.textContent = `
     body #mycaptchahint897454 {
       z-index: 2070;
     }
@@ -905,7 +950,7 @@ function getCleanLyricsContainer () {
     document.body.appendChild(container)
   } else {
     container = document.getElementById('lyricscontainer')
-    container.innerHTML = ''
+    container.textContent = ''
     container.className = ''
     container.style = ''
   }
@@ -1778,8 +1823,27 @@ function showSearchField (query) {
   // input.placeholder = 'Search genius.com...'
 
   const searchBtn = document.createElement('span')
-  searchBtn.classList.add('youtube-genius-lyrics-search-search-btn')
-  searchBtn.innerHTML = '<svg width="12" height="12" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 342 342"><path d="M337 317 239 219C259 196 270 166 270 134 270 60 210 0 135 0S0 60 0 134 61 268 135 268C167 268 196 257 219 239L317 337C323 343 331 343 337 337S343 323 337 317ZM29 134C29 76 76 29 135 29S241 76 241 134 194 239 135 239 29 192 29 134Z"/></svg>'
+  searchBtn.classList.add('youtube-genius-lyrics-search-search-btn');
+
+  searchBtn.appendChild(elmBuildNS('svg',
+    {
+      'xmlns': 'http://www.w3.org/2000/svg',
+    },
+    {
+      attr: {
+        'width': 12,
+        'height': 12,
+        'preserveAspectRatio': 'xMidYMid meet',
+        'viewBox': '0 0 342 342',
+      }
+    }, [
+    'path', {
+      attr: {
+        'd': 'M337 317 239 219C259 196 270 166 270 134 270 60 210 0 135 0S0 60 0 134 61 268 135 268C167 268 196 257 219 239L317 337C323 343 331 343 337 337S343 323 337 317ZM29 134C29 76 76 29 135 29S241 76 241 134 194 239 135 239 29 192 29 134Z'
+      }
+    }
+  ]))
+
 
   // Hide button
   const hideButton = document.createElement('span')
@@ -1849,7 +1913,22 @@ function setupLyricsDisplayDOM (song, searchresultsLengths) { // eslint-disable-
   document.documentElement.setAttribute('youtube-genius-lyrics-container', 'found')
 
   if (typeof genius.f.isGreasemonkey === 'function' && genius.f.isGreasemonkey()) {
-    container.innerHTML = '<h2>This script only works in <a target="_blank" href="https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/">Tampermonkey</a></h2>Greasemonkey is no longer supported because of this <a target="_blank" href="https://github.com/greasemonkey/greasemonkey/issues/2574">bug greasemonkey/issues/2574</a> in Greasemonkey.'
+    // container.textContent = '';
+    elmBuild(container,
+      ['h2',
+        'This script only works in ',
+        ['a', {
+          'target': '_blank',
+          'href': 'https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/'
+        }, 'Tampermonkey'],
+      ],
+      'Greasemonkey is no longer supported because of this ',
+      ['a', {
+        'target': '_blank',
+        'href': 'https://github.com/greasemonkey/greasemonkey/issues/2574'
+      }, 'bug greasemonkey/issues/2574'],
+      ' in Greasemonkey.',
+    )
     return
   }
 
@@ -2017,19 +2096,19 @@ function listSongs (hits, container, query) {
     const showPageViews = false // no need to show this; pageviews usually NaN
     const showLyricsState = true
 
-    const trackhtml =
-      `<div>
-        <div class="onhover"><span>🅖</span></div>
-        <div class="onout"><span>📄</span></div>
-      </div>
-      <div class="youtube-genius-lyrics-tracklist-info-container">
-      <p class="youtube-genius-lyrics-tracklist-info-primary">${hit.result.primary_artist.name} • ${hit.result.title}</p>
-      ${showPageViews && showLyricsState ? `<p class="youtube-genius-lyrics-tracklist-info-secondary"><span style="font-size:0.7em">👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}</span></p>` : ''}
-      ${!showPageViews && showLyricsState ? `<p class="youtube-genius-lyrics-tracklist-info-secondary"><span style="font-size:0.7em">${hit.result.lyrics_state}</span></p>` : ''}
-      </div>
-      <div style="clear:left;"></div>`
+    elmBuild(li,
+      ['div',
+        ['div', { classList: ['onhover'] }, ['span', '🅖']],
+        ['div', { classList: ['onout'] }, ['span', '📄']]
+      ],
+      ['div', { classList: ['youtube-genius-lyrics-tracklist-info-container'] },
+        ['p', { classList: ['youtube-genius-lyrics-tracklist-info-primary'] }, `${hit.result.primary_artist.name} • ${hit.result.title}`],
+        showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}`]] : '',
+        !showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `${hit.result.lyrics_state}`]] : ''
+      ],
+      ['div', { style: { 'clear': 'left' } }]
+    )
 
-    li.innerHTML = trackhtml
     if (!hitMaps) {
       hitMaps = new WeakMap()
     }
@@ -2043,7 +2122,7 @@ function listSongs (hits, container, query) {
     container = getCleanLyricsContainer()
   } else {
     container.className = ''
-    container.innerHTML = ''
+    container.textContent = ''
   }
   container.classList.add('youtube-genius-lyrics-results-container')
   document.documentElement.setAttribute('youtube-genius-lyrics-container', 'results')
@@ -2057,27 +2136,45 @@ function listSongs (hits, container, query) {
   ])
 }
 
-function loremIpsum () {
-  const classText = ['<span class="gray">', '</span>']
-  const classWhitespace = ['<span class="white">', '</span>']
+function loremIpsum() {
   const random = (x) => 1 + parseInt(Math.random() * x)
-  let text = ''
+
+  // Create a container for the entire content
+  const container = document.createElement('div')
+
   for (let v = 0; v < Math.max(3, random(5)) + 4; v++) {
     for (let b = 0; b < random(6); b++) {
-      const line = []
+      const lineContainer = document.createElement('span')
+      lineContainer.classList.add('gray')
+
       for (let l = 0; l < random(9); l++) {
         for (let w = 0; w < 1 + random(10); w++) {
           for (let i = 0; i < 1 + random(7); i++) {
-            line.push('x')
+            // Create and append 'x' text node
+            const xTextNode = document.createTextNode('x')
+            lineContainer.appendChild(xTextNode)
           }
-          line.push(classText[1] + classWhitespace[0] + '&#160;' + classWhitespace[1] + classText[0])
+
+          // Add the whitespace span
+          const whiteSpaceSpan = document.createElement('span')
+          whiteSpaceSpan.classList.add('white')
+          whiteSpaceSpan.textContent = '\u00A0' // Non-breaking space
+          lineContainer.appendChild(whiteSpaceSpan)
         }
-        line.push(classText[1] + '\n<br>\n' + classText[0])
+
+        // Add line break (br) after each set
+        lineContainer.appendChild(document.createElement('br'))
       }
-      text += classText[0] + line.join('') + classText[1] + '\n<br>\n'
+
+      // Append the line container to the main container
+      container.appendChild(lineContainer)
+
+      // Add a line break after each section
+      container.appendChild(document.createElement('br'))
     }
   }
-  return text
+
+  return container // Return the main container with all generated elements
 }
 
 function createSpinner (spinnerHolder) {
@@ -2090,9 +2187,9 @@ function createSpinner (spinnerHolder) {
   const spinner = spinnerHolder.appendChild(document.createElement('div'))
   spinner.classList.add('loadingspinner')
 
-  const lorem = spinnerHolder.appendChild(document.createElement('div'))
+  const lorem = loremIpsum()
   lorem.classList.add('lorem', 'lorem-scroll')
-  lorem.innerHTML = loremIpsum()
+  spinnerHolder.appendChild(lorem)
 
   return spinner
 }
@@ -2329,7 +2426,7 @@ function newAppHint (status) {
     if (style === null) {
       style = document.createElement('style')
       style.id = 'newapphint785_style'
-      style.innerHTML = `
+      style.textContent = `
       #newapphint785 {
         position:fixed;
         top:0%;
@@ -2392,7 +2489,7 @@ function newAppHint (status) {
     aInstall.textContent = '💘 Click to install new script'
     aInstall.addEventListener('click', function () {
       GM.setValue('newapphint', -1).then(function () {
-        aInstall.innerHTML = 'ℹ️ Please reload (F5) the page after installing'
+        aInstall.textContent = 'ℹ️ Please reload (F5) the page after installing'
       })
     })
 

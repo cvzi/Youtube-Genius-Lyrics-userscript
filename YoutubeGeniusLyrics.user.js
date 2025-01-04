@@ -46,7 +46,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* global GM, genius, geniusLyrics, top, GM_addValueChangeListener */ // eslint-disable-line no-unused-vars, no-redeclare
+/* global GM, genius, geniusLyrics, top, GM_addValueChangeListener, sessionStorage */ // eslint-disable-line no-unused-vars, no-redeclare
 /* jshint asi: true, esversion: 8 */
 
 'use strict'
@@ -737,6 +737,12 @@ function addCss () {
     .youtube-genius-lyrics-tracklist-info-secondary{
       text-transform: uppercase;
       font-style: italic;
+    }
+
+    svg.svg-genius-pageviews {
+      fill: currentColor;
+      width: 10px;
+      margin-right: 2px;
     }
 
     `
@@ -2010,10 +2016,10 @@ function getHitOfElement (li) {
   return hitMaps.get(li) || null
 }
 
-function formatPageViews (stats) {
-  if (!stats) return null
-  return 'pageviews' in stats && typeof stats.pageviews === 'number' ? genius.f.metricPrefix(stats.pageviews, 1) : ' - '
-}
+// function formatPageViews (stats) {
+//   if (!stats) return null
+//   return 'pageviews' in stats && typeof stats.pageviews === 'number' ? genius.f.metricPrefix(stats.pageviews, 1) : ' - '
+// }
 
 async function rememberLyricsSelection (title, artists, hit) {
   // in order to call "genius.f.rememberLyricsSelection(title, artists, jsonHit)", use async call to get jsonHit
@@ -2048,6 +2054,19 @@ function onLyricsResultsTrackListClick (ev) {
       rememberLyricsSelection(compoundTitle, null, hit)
     }
   }
+}
+
+function convertPageViewsToText (pageviews) {
+  if (!Number.isFinite(pageviews)) return 'NaN'
+  if (pageviews <= 999) {
+    return pageviews
+  }
+  if (pageviews <= 999949) {
+    return `${+(pageviews / 1000).toFixed(1)}K`
+  }
+  // if(pageviews<=999949999){
+  return `${+(pageviews / 1000000).toFixed(1)}M`
+  // }
 }
 
 function listSongs (hits, container, query) {
@@ -2085,6 +2104,12 @@ function listSongs (hits, container, query) {
   const liArr = hits.map(function hitsMap (hit) {
     const li = document.createElement('li')
     li.classList.add('youtube-genius-lyrics-results-li')
+    const resultUrl = hit.result.url
+    const resultPageViews = (hit.result.stats || 0).pageviews
+    li.setAttribute('data-result-url', resultUrl)
+    li.setAttribute('data-result-pageviews', resultPageViews)
+    // li.setAttribute('title', `${Number.isFinite(resultPageViews) ? convertPageViewsToText(resultPageViews) + "\n" : ""}${resultUrl}`)
+
     if (isTopResultBeingAutoHit && hit._order === hits[0]._order && hit._matchScore === hits[0]._matchScore) {
       li.classList.add('lyrics-major-result')
     } else {
@@ -2092,9 +2117,10 @@ function listSongs (hits, container, query) {
     }
     li.setAttribute('title', `${hit.result.title_with_featured}`)
 
-    const showPageViews = false // no need to show this; pageviews usually NaN
+    const showPageViews = true // no need to show this; pageviews usually NaN
     const showLyricsState = true
 
+    /* eslint-disable operator-linebreak, indent, multiline-ternary */
     elmBuild(li,
       ['div',
         ['div', { classList: ['onhover'] }, ['span', '🅖']],
@@ -2102,11 +2128,20 @@ function listSongs (hits, container, query) {
       ],
       ['div', { classList: ['youtube-genius-lyrics-tracklist-info-container'] },
         ['p', { classList: ['youtube-genius-lyrics-tracklist-info-primary'] }, `${hit.result.primary_artist.name} • ${hit.result.title}`],
-        showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `👁 ${formatPageViews(hit.result.stats) || ''} ${hit.result.lyrics_state}`]] : '',
+        showPageViews && showLyricsState && Number.isFinite(resultPageViews) ?
+          ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] },
+            ['span', { style: { 'font-size': '0.7em' } },
+              elmBuildNS('svg', { classList: ['svg-genius-pageviews'] }, { attr: { viewBox: '-38 -27 76 54' } },
+                ['path', { attr: { d: 'M0-25C21-25 35 0 35 0S21 25 0 25-35 0-35 0-21-25 0-25zm0 7C-13-18-23-6-28 0c5 6 15 18 28 18S23 6 28 0C23-6 13-18 0-18M0-7a7 7 90 1 1-7 7 7 7 90 0 1 7-7m0-5A12 12 90 1 0 12 0 12 12 90 0 0 0-12z' } }]
+              ),
+              `${convertPageViewsToText(resultPageViews) || ''} ${hit.result.lyrics_state}`
+            ]
+          ] : '',
         !showPageViews && showLyricsState ? ['p', { classList: ['youtube-genius-lyrics-tracklist-info-secondary'] }, ['span', { style: { 'font-size': '0.7em' } }, `${hit.result.lyrics_state}`]] : ''
       ],
       ['div', { style: { clear: 'left' } }]
     )
+    /* eslint-enable operator-linebreak, indent, multiline-ternary */
 
     if (!hitMaps) {
       hitMaps = new WeakMap()
@@ -2547,6 +2582,12 @@ function entryPoint () {
       }
     if (isInIframe && !isRobotsTxt) return
 
+    let defaultOptions = null
+    try {
+      defaultOptions = sessionStorage[`geniusOptions_${SCRIPT_NAME}`]
+      if (defaultOptions) defaultOptions = JSON.parse(defaultOptions)
+    } catch (e) { }
+
     // should it be required for robots.txt as well?? can remove??
     genius = geniusLyrics({
       GM,
@@ -2571,7 +2612,8 @@ function entryPoint () {
       customSpinnerDOM,
       iframeLoadedCallback1,
       iframeLoadedCallback2,
-      autoSelectLyrics
+      autoSelectLyrics,
+      defaultOptions
     })
 
     if (isRobotsTxt !== false || genius === null || !genius.option) return
@@ -2699,6 +2741,8 @@ function entryPoint () {
           // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
           let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
           const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
+          const annotatedSpanBgColor = cStyle.getPropertyValue('--yt-live-chat-automod-button-background-color') || ''
+          const annotatedSpanBgColorActive = cStyle.getPropertyValue('--yt-live-chat-automod-button-background-color-hover') || ''
 
           let fontSize = genius.option.fontSize
           if (genius.option.fontSize) {
@@ -2738,7 +2782,9 @@ function entryPoint () {
             '--egl-color': (color === null ? '' : `${color}`),
             '--egl-font-size': (fontSize === null ? '' : `${fontSize}`),
             '--egl-infobox-background': (slbc === null ? '' : `${slbc}`),
-            '--egl-link-color': (`${linkColor}`)
+            '--egl-link-color': (`${linkColor}`),
+            '--egl-annotated-span-bgcolor': (`${annotatedSpanBgColor}`),
+            '--egl-annotated-span-bgcolor-active': (`${annotatedSpanBgColorActive}`)
           })
           return true
         }
@@ -2757,13 +2803,19 @@ function entryPoint () {
       noRawReleaseDate: true,
       shortenArtistName: true,
       fixArtistName: true,
-      removeStats: true, // pageviews cannot be displayed
+      removeStats: false,
       noRelatedLinks: true,
       onlyCompleteLyrics: false
     })
     genius.option.enableStyleSubstitution = true
+    genius.option.normalizeClassV2 = true
     genius.option.cacheHTMLRequest = true // 1 lyrics page consume 2XX KB [OR 25 ~ 50KB under ]
 
+    // prepare the shared options for the iframe
+    try {
+      const defaultOptions = Object.fromEntries(Object.entries(genius.option).filter(e => typeof e[1] === 'boolean'))
+      sessionStorage[`geniusOptions_${SCRIPT_NAME}`] = JSON.stringify(defaultOptions)
+    } catch (e) { }
     document.documentElement.classList.add('youtube-genius-lyrics')
   }
 }

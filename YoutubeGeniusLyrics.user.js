@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.10.7
+// @version         10.10.8
 // @require         https://update.greasyfork.org/scripts/406698/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
@@ -1245,6 +1245,16 @@ function makeKeyWords (keywords, songTitle) {
   return newKeyWords
 }
 
+function repeatReplace (text, searchValue, substring, count) {
+  while (count > 0) {
+    const text2 = text.replace(searchValue, substring)
+    if (text2 === text) return text
+    text = text2
+    count--
+  }
+  return text
+}
+
 async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
   let songArtists
   let songTitle = videoTitle
@@ -1262,25 +1272,23 @@ async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
     .replace(/「([^「」]+)」/g, '[$1]')
     .replace(/\[(MV|PV)\]/g, '')
 
-  let variants = new Set()
-  variants.add(songTitle.trim())
+  const keywords = (videoDetails || 0).keywords
 
-  for (let s of songTitle.split('/')) {
-    s = s.trim()
-    variants.add(s)
-  }
-
-  for (let s of songTitle.split('|')) {
-    // 『チェンソーマン』第９話ノンクレジットエンディング / CHAINSAW MAN #9 Ending│Aimer「Deep down」
-    s = s.trim()
-    variants.add(s)
-  }
-
-  variants = [...variants.keys()]
-  let variantsX = new Map()
-  if (videoDetails && videoDetails.keywords && videoDetails.keywords.length > 2) {
+  let wSongTitle = null
+  if (videoDetails && keywords && keywords.length > 2) {
+    let variants = new Set()
+    variants.add(songTitle.trim())
+    for (const s of songTitle.split('/')) {
+      variants.add(s.trim())
+    }
+    for (const s of songTitle.split('|')) {
+      // 『チェンソーマン』第９話ノンクレジットエンディング / CHAINSAW MAN #9 Ending│Aimer「Deep down」
+      variants.add(s.trim())
+    }
+    variants = [...variants.keys()]
+    let variantsX = new Map()
     let kHash = new Map()
-    const mainwords = keywordProcess(songTitle, videoDetails.keywords, kHash)
+    const mainwords = keywordProcess(songTitle, keywords, kHash)
     kHash.clear()
     kHash = null
     if (mainwords.length > 2) {
@@ -1309,22 +1317,22 @@ async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
         })
       }))
     }
-  }
-  let wSongTitle = null
-  if (variantsX.size === 1) {
-    const values = [...variantsX.keys()]
-    wSongTitle = values[0]
-  } else if (variantsX.size > 1) {
-    const entries = [...variantsX.entries()]
-    entries.sort((a, b) => (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket))
-    if (entries[0][1].kMatch > entries[1][1].kMatch) {
-      wSongTitle = entries[0][0]
+
+    if (variantsX.size === 1) {
+      const values = [...variantsX.keys()]
+      wSongTitle = values[0]
+    } else if (variantsX.size > 1) {
+      const entries = [...variantsX.entries()]
+      entries.sort((a, b) => (b[1].kMatch * 100 + b[1].kBracket) - (a[1].kMatch * 100 + a[1].kBracket))
+      if (entries[0][1].kMatch > entries[1][1].kMatch) {
+        wSongTitle = entries[0][0]
+      }
     }
+    variantsX.clear()
+    variantsX = null
+    variants.length = 0
+    variants = null
   }
-  variants.length = 0
-  variantsX.clear()
-  variants = null
-  variantsX = null
 
   if (wSongTitle !== null) {
     const m = wSongTitle.split('\t')
@@ -1334,16 +1342,42 @@ async function traditionalYtdDescriptionInfo (videoTitle, videoDetails) {
 
   // Symbols and Punctuation can be part of the artist name (e.g. &TEAM, milli-billi)
   songTitle = simpleTextFixup(songTitle)
+
+  songTitle = songTitle.replace(/(Official )?(Lyrics Video|Lyric Video|Music Video|Promotion Video|Video)/gi, '')
   songTitle = songTitle.replace(/\b(PERFORMANCE VIDEO|official mv|karaoke mv|official|music mv|audio|music|video|karaoke)\b/gi, '')
   songTitle = songTitle.replace(/\(\s*\)|\[\s*\]/g, '')
   songTitle = songTitle.replace(/exclusive\s*-?/gi, '')
   songTitle = songTitle.replace(/-\s*-/gi, ' - ')
   songTitle = songTitle.replace(/([\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F\s])(MV|PV)\s*$/g, '$1')
   songTitle = songTitle.replace(/^\s*(MV|PV)([\uFF01-\uFF0F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u3000\u3001-\u303F\u2000-\u206F\s])/g, '$2')
+  songTitle = repeatReplace(songTitle, /\[\]/g, '', 8)
   songTitle = songTitle.trim()
+
+  // YOASOBI[祝福] [[機動戦士ガンダム 水星の魔女]オープニングテーマ]
+  // 結束バンド[星座になれたら]／ TVアニメ[ぼっち・ざ・ろっく！]第12話劇中曲
+  const exec1 = /^[^[\](){}]+\[[^[\](){}]+\]/.exec(songTitle)
+  if (exec1) {
+    let tmpSongTitle = songTitle
+    tmpSongTitle = tmpSongTitle.replace(/\[\[[^[\]{}()]+\](オープニングテーマ|オープニング|エンディングテーマ|エンディング|Opening\s?Song|Ending\s?Song|Opening|Ending)\]$/, ' ').trim()
+    tmpSongTitle = tmpSongTitle.replace(/\[[^[\]{}()]*\s*(オープニングテーマ|オープニング|エンディングテーマ|エンディング|Opening\s?Song|Ending\s?Song|Opening|Ending)\]$/, ' ').trim()
+    tmpSongTitle = tmpSongTitle.replace(/(TV)?\s*(アニメ|Anime)\[[^[\]{}()]+\][^[\]{}()]*$/, ' ').trim()
+    if (tmpSongTitle.includes(exec1[0])) {
+      songTitle = tmpSongTitle
+    }
+  }
+
+  songTitle = repeatReplace(songTitle, /[／/]\s*$/g, '', 8)
 
   // Pattern: Artist  - Song title
   songTitle = songTitle.split(/\s+[-–]\s+/)
+
+  if (songTitle.length === 1) {
+    // Pattern: Artist[Song title]
+    const m = songTitle[0].match(/^([^[\]{}()]+)\[([^[\]{}()]+)\]$/)
+    if (m) {
+      songTitle = [m[1], m[2]]
+    }
+  }
 
   if (songTitle.length === 1) {
     // Pattern: Artist | Song title

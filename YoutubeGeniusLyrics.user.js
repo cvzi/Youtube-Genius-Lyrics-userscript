@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.10.8
+// @version         10.10.9
 // @require         https://update.greasyfork.org/scripts/406698/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
@@ -60,6 +60,9 @@ let lyricsDisplayState = 'hidden'
 let disableShowLyricsButton = false // hide if the page is confirmed as non-video page
 let isYouTubeLive = false
 let iframeBlankURL = null
+
+const EXCLUDE_LIVE_VIDEO = true // this should be configurable in "options" ? [>=25min]
+const EXCLUDE_SHORT_LEN = true // this should be configurable in "options" ? [<15s]
 
 const elmBuild = (tag, ...contents) => {
   /** @type {HTMLElement} */
@@ -1537,7 +1540,7 @@ async function addLyrics (force, beLessSpecific) {
     switch (pRes.status) {
       case -1: // rarely happen; only if addLyrics triggered when the page is still loading
         return
-      case -2: // Not a video page or video page not visible
+      case -2: // Not a video page, video page not visible, or any case that should disable the feature
         lastVideoId = null
         if (isMainCall) setDisableShowLyricsButton(true) // no button if the page is confirmed as non-video page like 'browse', 'search'
         genius.f.hideLyricsWithMessage()
@@ -2411,6 +2414,16 @@ async function readPageSongInfo () {
     const videoDetails = getVideoInfo(ytdAppData)
     if (!videoDetails || !videoDetails.videoId) {
       return resolve({ status: -3 })
+    }
+
+    const lengthSeconds = +videoDetails.lengthSeconds
+    if (Number.isFinite(lengthSeconds)) {
+      if (EXCLUDE_SHORT_LEN && lengthSeconds < 15) { // 15s
+        return resolve({ status: -3 })
+      }
+      if (EXCLUDE_LIVE_VIDEO && videoDetails.isLiveContent && lengthSeconds > 1500) { // 25min
+        return resolve({ status: -3 })
+      }
     }
 
     getPageSongInfo(ytdAppData, videoDetails).then(pageSongInfoRes => {

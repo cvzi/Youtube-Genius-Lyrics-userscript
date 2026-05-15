@@ -14,7 +14,7 @@
 // @author          cuzi
 // @icon            https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/72x72/E044.png
 // @supportURL      https://github.com/cvzi/Youtube-Genius-Lyrics-userscript/issues
-// @version         10.10.17
+// @version         10.10.18
 // @require         https://update.greasyfork.org/scripts/406698/GeniusLyrics.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js
 // @grant           GM.xmlHttpRequest
@@ -2782,12 +2782,12 @@ function entryPoint () {
           if (!ytdApp) return
 
           const cStyle = window.getComputedStyle(ytdApp)
-          let background = cStyle.getPropertyValue('--yt-spec-base-background')
-          let color = cStyle.getPropertyValue('--yt-spec-text-primary')
+          let background = cStyle.getPropertyValue('--yt-sys-color-baseline--base-background')
+          let color = cStyle.getPropertyValue('--yt-sys-color-baseline--text-primary')
           // let bbp = cStyle.getPropertyValue('--yt-spec-brand-background-primary')
           // let cfs = cStyle.getPropertyValue('--yt-caption-font-size')
           let slbc = cStyle.getPropertyValue('--ytd-searchbox-legacy-button-color')
-          const linkColor = cStyle.getPropertyValue('--yt-spec-call-to-action') || ''
+          const linkColor = cStyle.getPropertyValue('--yt-sys-color-baseline--call-to-action') || ''
           const annotatedSpanBgColor = cStyle.getPropertyValue('--yt-live-chat-automod-button-background-color') || ''
           const annotatedSpanBgColorActive = cStyle.getPropertyValue('--yt-live-chat-automod-button-background-color-hover') || ''
 
